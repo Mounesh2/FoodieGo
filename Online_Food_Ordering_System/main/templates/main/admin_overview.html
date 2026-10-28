@@ -1,0 +1,158 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block title %}Platform Admin Dashboard — FoodieGo Bengaluru{% endblock %}
+
+{% block content %}
+<div class="admin-portal-wrapper py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container">
+        <!-- Admin Header & Sub-Nav -->
+        <div class="card border-0 shadow-sm rounded-lg p-3 p-md-4 mb-4 bg-white" style="border-radius: 16px;">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <h3 class="font-weight-bold text-dark mb-1">
+                        <i class="fa-solid fa-chart-line text-primary mr-2"></i> FoodieGo Platform Administration
+                    </h3>
+                    <p class="small text-muted mb-0">Platform overview, revenue analytics, multi-role user governance, and restaurant operations.</p>
+                </div>
+                <div class="mt-3 mt-md-0 d-flex flex-wrap">
+                    <a href="{% url 'main:admin_portal_management' %}" class="btn btn-outline-primary font-weight-bold px-3 py-2 mr-2 mb-1" style="border-radius: 8px;">
+                        <i class="fa-solid fa-users-gear mr-1"></i> Users & Restaurants
+                    </a>
+                    <a href="{% url 'main:admin_portal_orders_offers' %}" class="btn btn-warning font-weight-bold text-dark px-3 py-2 mr-2 mb-1" style="border-radius: 8px;">
+                        <i class="fa-solid fa-tags mr-1"></i> Orders & Offers
+                    </a>
+                    <a href="/admin/" target="_blank" class="btn btn-dark font-weight-bold px-3 py-2 mb-1" style="border-radius: 8px;">
+                        <i class="fa-solid fa-sliders mr-1"></i> Django Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm rounded-lg p-3 bg-white h-100" style="border-radius: 14px; border-left: 5px solid #3b82f6 !important;">
+                    <div class="small font-weight-bold text-muted text-uppercase">Total Customers</div>
+                    <div class="h3 font-weight-bold text-primary mb-1 mt-1">{{ total_customers }}</div>
+                    <div class="small text-muted">Registered accounts</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm rounded-lg p-3 bg-white h-100" style="border-radius: 14px; border-left: 5px solid #10b981 !important;">
+                    <div class="small font-weight-bold text-muted text-uppercase">Total Restaurants</div>
+                    <div class="h3 font-weight-bold text-success mb-1 mt-1">{{ total_restaurants }}</div>
+                    <div class="small text-muted">Across Bengaluru hubs</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm rounded-lg p-3 bg-white h-100" style="border-radius: 14px; border-left: 5px solid #fc8019 !important;">
+                    <div class="small font-weight-bold text-muted text-uppercase">Total Orders</div>
+                    <div class="h3 font-weight-bold text-dark mb-1 mt-1">{{ total_orders }}</div>
+                    <div class="small text-muted">Lifetime platform volume</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm rounded-lg p-3 bg-white h-100" style="border-radius: 14px; border-left: 5px solid #8b5cf6 !important;">
+                    <div class="small font-weight-bold text-muted text-uppercase">Platform Revenue (Recorded)</div>
+                    <div class="h3 font-weight-bold text-dark mb-1 mt-1">₹{{ platform_revenue|floatformat:2 }}</div>
+                    <div class="small text-muted">From delivered orders</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Active Orders Overview -->
+            <div class="col-lg-8 mb-4">
+                <div class="card border-0 shadow-sm rounded-lg p-4 bg-white" style="border-radius: 16px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h5 class="font-weight-bold text-dark mb-0">
+                            <i class="fa-solid fa-list-check text-primary mr-2"></i> Recent Platform Orders
+                        </h5>
+                        <a href="{% url 'main:admin_portal_orders_offers' %}" class="small font-weight-bold text-primary">Manage All Orders &rarr;</a>
+                    </div>
+
+                    {% if recent_orders %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="bg-light small text-muted text-uppercase">
+                                    <tr>
+                                        <th>Order #</th>
+                                        <th>Customer</th>
+                                        <th>Restaurant</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ord in recent_orders %}
+                                        <tr>
+                                            <td class="font-monospace font-weight-bold text-dark">
+                                                #{{ ord.order_number }}
+                                                <div class="small text-muted font-weight-normal">{{ ord.created_at|date:"M d, h:i A" }}</div>
+                                            </td>
+                                            <td class="small font-weight-bold text-dark">{{ ord.user.username }}</td>
+                                            <td class="small text-muted">{{ ord.restaurant.name }}</td>
+                                            <td class="small font-weight-bold text-dark">₹{{ ord.total_amount|floatformat:2 }}</td>
+                                            <td>
+                                                <span class="badge badge-pill 
+                                                    {% if ord.status == 'Delivered' %}badge-success
+                                                    {% elif ord.status == 'Cancelled' %}badge-danger
+                                                    {% else %}badge-warning text-dark{% endif %} font-weight-bold px-2 py-1">
+                                                    {{ ord.status }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <p class="mb-0">No orders recorded yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Access Hub Links -->
+            <div class="col-lg-4 mb-4">
+                <div class="card border-0 shadow-sm rounded-lg p-4 bg-white mb-4" style="border-radius: 16px;">
+                    <h6 class="font-weight-bold text-dark mb-3">
+                        <i class="fa-solid fa-bolt text-warning mr-1"></i> Quick Department Portals
+                    </h6>
+                    <div class="list-group list-group-flush small">
+                        <a href="{% url 'main:admin_portal_management' %}" class="list-group-item list-group-item-action px-0 py-2 border-bottom d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-users text-primary mr-2"></i> User & Staff Roles</span>
+                            <span class="text-muted">&rarr;</span>
+                        </a>
+                        <a href="{% url 'main:admin_portal_orders_offers' %}" class="list-group-item list-group-item-action px-0 py-2 border-bottom d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-percent text-warning mr-2"></i> Promo Coupons</span>
+                            <span class="text-muted">&rarr;</span>
+                        </a>
+                        <a href="{% url 'main:restaurant_portal_overview' %}" class="list-group-item list-group-item-action px-0 py-2 border-bottom d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-kitchen-set text-danger mr-2"></i> Partner Kitchen Portal</span>
+                            <span class="text-muted">&rarr;</span>
+                        </a>
+                        <a href="{% url 'main:delivery_portal_overview' %}" class="list-group-item list-group-item-action px-0 py-2 border-bottom d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-motorcycle text-success mr-2"></i> Delivery Rider Portal</span>
+                            <span class="text-muted">&rarr;</span>
+                        </a>
+                        <a href="/api/docs/" target="_blank" class="list-group-item list-group-item-action px-0 py-2 d-flex justify-content-between align-items-center">
+                            <span><i class="fa-solid fa-code text-info mr-2"></i> Swagger REST APIs</span>
+                            <span class="text-muted">&rarr;</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-lg p-4 bg-light" style="border-radius: 16px;">
+                    <h6 class="font-weight-bold text-dark mb-2">Platform Operations</h6>
+                    <p class="small text-muted mb-0">
+                        Platform revenue metrics summarize delivered transactions recorded across Bengaluru restaurant partner kitchens and delivery fulfillment routes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

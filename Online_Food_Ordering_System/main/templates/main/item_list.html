@@ -1,0 +1,109 @@
+{% extends "main/layout.html" %}
+{% load static %}
+
+{% block title %}Manage Menu Items — FoodieGo 2.0 Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="font-weight-extrabold text-dark mb-1">
+                <i class="fa-solid fa-utensils text-primary mr-2"></i> Dishes & Menu Catalog
+            </h2>
+            <p class="text-muted mb-0">Manage food items, pricing, categories, and availability</p>
+        </div>
+        <div>
+            <a href="{% url 'main:item-create' %}" class="btn btn-primary font-weight-bold rounded-pill px-4">
+                <i class="fa-solid fa-plus mr-1"></i> Add Dish
+            </a>
+            <a href="{% url 'main:admin_dashboard' %}" class="btn btn-outline-dark font-weight-bold rounded-pill px-3 ml-2">
+                Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% if items %}
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Dish</th>
+                            <th>Restaurant</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Veg / Non-Veg</th>
+                            <th>Rating</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center" style="gap: 0.75rem;">
+                                        <img src="{{ item.get_display_image }}" 
+                                             onerror="this.onerror=null; this.src='{% static 'images/fallback_food.svg' %}';"
+                                             alt="{{ item.title }}" 
+                                             style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;">
+                                        <div>
+                                            <strong><a href="{% url 'main:dishes' item.slug %}" class="text-dark">{{ item.title }}</a></strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="small text-muted">{{ item.restaurant.name|default:"Kitchen Partner" }}</span>
+                                </td>
+                                <td><span class="badge badge-light border">{{ item.category }}</span></td>
+                                <td><strong class="text-dark">₹{{ item.price|floatformat:0 }}</strong></td>
+                                <td>
+                                    {% if item.is_veg %}
+                                        <span class="badge badge-success">Veg</span>
+                                    {% else %}
+                                        <span class="badge badge-danger">Non-Veg</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-warning text-dark"><i class="fa-solid fa-star"></i> {{ item.rating|floatformat:1 }}</span>
+                                </td>
+                                <td class="text-right">
+                                    <a href="{% url 'main:item-update' item.slug %}" class="btn btn-sm btn-outline-primary rounded-pill px-2" title="Edit Dish">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                    <a href="{% url 'main:item-delete' item.slug %}" class="btn btn-sm btn-outline-danger rounded-pill px-2 ml-1" title="Delete Dish">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if items.has_other_pages %}
+            <nav class="mb-5">
+                <ul class="pagination justify-content-center">
+                    {% if items.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link text-dark font-weight-bold" href="?page={{ items.previous_page_number }}">&laquo; Prev</a>
+                        </li>
+                    {% endif %}
+                    <li class="page-item active">
+                        <span class="page-link bg-primary border-primary font-weight-bold">{{ items.number }} of {{ items.paginator.num_pages }}</span>
+                    </li>
+                    {% if items.has_next %}
+                        <li class="page-item">
+                            <a class="page-link text-dark font-weight-bold" href="?page={{ items.next_page_number }}">Next &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="card border-0 shadow-sm rounded-lg p-5 text-center text-muted">
+            <p class="mb-0">No dishes in the catalog.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

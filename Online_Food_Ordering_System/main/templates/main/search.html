@@ -1,0 +1,194 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block title %}Search Food & Restaurants — FoodieGo Bengaluru{% endblock %}
+
+{% block content %}
+<div class="search-page-wrapper py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container">
+        <!-- Search Input Bar Section -->
+        <div class="card border-0 shadow-sm rounded-lg p-3 p-md-4 mb-4" style="border-radius: 16px;">
+            <form action="{% url 'main:search' %}" method="get" id="searchForm">
+                <div class="input-group input-group-lg">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text bg-white border-right-0 text-muted" style="border-top-left-radius: 12px; border-bottom-left-radius: 12px;">
+                            <i class="fa-solid fa-magnifying-glass text-warning" style="font-size: 1.25rem;"></i>
+                        </span>
+                    </div>
+                    <input type="text" name="q" value="{{ query }}" class="form-control border-left-0 border-right-0" placeholder="Search for dishes (Biryani, Dosa, Pizza) or restaurants (Meghana, Vidyarthi Bhavan)..." id="mainSearchInput" autocomplete="off" autofocus>
+                    <div class="input-group-append">
+                        <button class="btn btn-warning font-weight-bold px-4 text-dark" type="submit" style="border-top-right-radius: 12px; border-bottom-right-radius: 12px; background: #fc8019; border-color: #fc8019; color: #fff !important;">
+                            Search
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Filters Bar -->
+                <div class="d-flex flex-wrap align-items-center mt-3 pt-2 border-top">
+                    <span class="small font-weight-bold text-muted mr-3 mb-2">Filters:</span>
+                    <a href="?q={{ query }}&veg={% if veg_only %}false{% else %}true{% endif %}" class="badge badge-pill {% if veg_only %}badge-success{% else %}badge-light text-dark border{% endif %} p-2 mr-2 mb-2 font-weight-bold">
+                        <i class="fa-solid fa-leaf mr-1"></i> Pure Veg
+                    </a>
+                    <a href="?q={{ query }}&rating=4.0" class="badge badge-pill {% if min_rating == '4.0' %}badge-warning text-dark{% else %}badge-light text-dark border{% endif %} p-2 mr-2 mb-2 font-weight-bold">
+                        <i class="fa-solid fa-star text-warning mr-1"></i> 4.0+ Rated
+                    </a>
+                    <a href="?q={{ query }}&rating=4.5" class="badge badge-pill {% if min_rating == '4.5' %}badge-warning text-dark{% else %}badge-light text-dark border{% endif %} p-2 mr-2 mb-2 font-weight-bold">
+                        <i class="fa-solid fa-star text-warning mr-1"></i> 4.5+ Top Rated
+                    </a>
+                    {% if query or veg_only or min_rating %}
+                        <a href="{% url 'main:search' %}" class="small text-danger ml-auto mb-2 font-weight-bold">
+                            <i class="fa-solid fa-xmark mr-1"></i> Clear all
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+
+            <!-- Popular Search Suggestions -->
+            <div class="mt-2 pt-2">
+                <span class="small text-muted mr-2">Popular searches:</span>
+                {% for tag in suggestions %}
+                    <a href="{% url 'main:search' %}?q={{ tag }}" class="badge badge-light border text-muted mr-1 mb-1 p-2" style="font-weight: 500;">
+                        {{ tag }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Search Results Section -->
+        {% if query %}
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="font-weight-bold text-dark mb-0">
+                    Results for "<span class="text-primary">{{ query }}</span>"
+                </h4>
+                <span class="badge badge-secondary px-3 py-2 font-weight-bold">{{ total_results }} results found</span>
+            </div>
+
+            <!-- Matched Restaurants -->
+            {% if matched_restaurants %}
+                <div class="mb-5">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="font-weight-bold text-dark mb-0">
+                            <i class="fa-solid fa-store mr-2 text-warning"></i> Matching Restaurants ({{ matched_restaurants|length }})
+                        </h5>
+                        <a href="{% url 'main:restaurants' %}?q={{ query }}" class="small font-weight-bold text-primary">View all in Restaurants &rarr;</a>
+                    </div>
+                    <div class="row">
+                        {% for rest in matched_restaurants %}
+                            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                                <div class="card h-100 border-0 shadow-sm rounded-lg overflow-hidden restaurant-card" style="border-radius: 14px; transition: transform 0.2s;">
+                                    <div class="position-relative">
+                                        <img src="{{ rest.get_display_image }}" onerror="this.onerror=null; this.src='{% static 'images/fallback_restaurant.svg' %}';" alt="{{ rest.name }}" class="card-img-top" style="height: 160px; object-fit: cover;">
+                                        <span class="position-absolute badge badge-dark px-2 py-1" style="bottom: 10px; left: 10px; background: rgba(0,0,0,0.75);">
+                                            <i class="fa-solid fa-clock mr-1 text-warning"></i> {{ rest.estimated_delivery_minutes }} mins
+                                        </span>
+                                    </div>
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <h6 class="font-weight-bold mb-0 text-truncate text-dark" title="{{ rest.name }}">{{ rest.name }}</h6>
+                                            <span class="badge badge-success px-2 py-1 font-weight-bold">
+                                                <i class="fa-solid fa-star small mr-1"></i>{{ rest.rating }}
+                                            </span>
+                                        </div>
+                                        <p class="small text-muted mb-1 text-truncate">{{ rest.cuisine }}</p>
+                                        <div class="d-flex justify-content-between small text-muted pt-2 border-top">
+                                            <span><i class="fa-solid fa-location-dot mr-1 text-danger"></i>{{ rest.area }}</span>
+                                            <span>₹{{ rest.average_cost_for_two|floatformat:0 }} for two</span>
+                                        </div>
+                                        <a href="{% url 'main:restaurant_detail' rest.slug %}" class="btn btn-sm btn-outline-warning btn-block mt-3 font-weight-bold text-dark" style="border-radius: 8px;">
+                                            View Menu
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Matched Dishes -->
+            {% if matched_dishes %}
+                <div>
+                    <h5 class="font-weight-bold text-dark mb-3">
+                        <i class="fa-solid fa-utensils mr-2 text-warning"></i> Matching Dishes ({{ matched_dishes|length }})
+                    </h5>
+                    <div class="row">
+                        {% for dish in matched_dishes %}
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="card border-0 shadow-sm rounded-lg p-3 h-100" style="border-radius: 14px;">
+                                    <div class="d-flex justify-content-between">
+                                        <div style="flex: 1; padding-right: 15px;">
+                                            <div class="mb-1">
+                                                {% if dish.is_veg %}
+                                                    <span class="badge badge-light border border-success text-success px-2 py-0 small font-weight-bold">
+                                                        <i class="fa-solid fa-circle" style="font-size: 8px;"></i> VEG
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge badge-light border border-danger text-danger px-2 py-0 small font-weight-bold">
+                                                        <i class="fa-solid fa-play fa-rotate-270" style="font-size: 8px;"></i> NON-VEG
+                                                    </span>
+                                                {% endif %}
+                                                <span class="badge badge-light border text-muted small ml-1">{{ dish.category }}</span>
+                                            </div>
+                                            <h6 class="font-weight-bold text-dark mb-1">{{ dish.title }}</h6>
+                                            <div class="font-weight-bold text-dark mb-1">₹{{ dish.price|floatformat:0 }}</div>
+                                            <div class="small text-muted mb-2">
+                                                From <a href="{% url 'main:restaurant_detail' dish.restaurant.slug %}" class="text-primary font-weight-bold">{{ dish.restaurant.name }}</a>
+                                                <span class="mx-1">•</span> {{ dish.restaurant.area }}
+                                            </div>
+                                            {% if dish.description %}
+                                                <p class="small text-muted mb-0 text-truncate" style="max-width: 260px;">{{ dish.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="text-center" style="width: 110px;">
+                                            <div class="position-relative">
+                                                <img src="{{ dish.get_display_image }}" onerror="this.onerror=null; this.src='{% static 'images/fallback_food.svg' %}';" alt="{{ dish.title }}" class="rounded shadow-sm" style="width: 105px; height: 95px; object-fit: cover; border-radius: 12px;">
+                                                <div class="mt-2">
+                                                    <a href="{% url 'main:add-to-cart' dish.slug %}?next={% url 'main:search' %}?q={{ query }}" class="btn btn-sm btn-outline-success font-weight-bold px-3 py-1 shadow-sm" style="border-radius: 8px; width: 100%;">
+                                                        ADD +
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Empty Search Results State -->
+            {% if not matched_restaurants and not matched_dishes %}
+                <div class="text-center py-5 my-4">
+                    <div class="display-3 mb-3">🔍</div>
+                    <h4 class="font-weight-bold text-dark">No dishes or restaurants found for "{{ query }}"</h4>
+                    <p class="text-muted" style="max-width: 480px; margin: 0 auto;">
+                        Check for typos, try searching by broader food categories like "Biryani", "Dosa", "Pizza", or browse our curated Bengaluru restaurants directory.
+                    </p>
+                    <div class="mt-4">
+                        <a href="{% url 'main:restaurants' %}" class="btn btn-warning px-4 py-2 font-weight-bold text-dark" style="border-radius: 8px;">
+                            Browse All Restaurants
+                        </a>
+                        <a href="{% url 'main:home' %}" class="btn btn-outline-secondary px-4 py-2 font-weight-bold ml-2" style="border-radius: 8px;">
+                            Return to Homepage
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Initial Search State with Popular Categories -->
+            <div class="text-center py-4">
+                <h5 class="font-weight-bold text-dark mb-4">Popular Cuisines in Bengaluru</h5>
+                <div class="d-flex flex-wrap justify-content-center">
+                    {% for cat in suggestions %}
+                        <a href="{% url 'main:search' %}?q={{ cat }}" class="card border-0 shadow-sm p-3 m-2 text-decoration-none text-dark" style="border-radius: 14px; min-width: 130px; transition: transform 0.2s;">
+                            <div class="font-weight-bold mb-1">{{ cat }}</div>
+                            <span class="small text-primary font-weight-bold">Search &rarr;</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends "main/layout.html" %}
+{% load static %}
+
+{% block title %}Your Cart — FoodieGo Bengaluru{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="font-weight-extrabold text-dark mb-1">
+                <i class="fa-solid fa-bag-shopping text-primary mr-2"></i> Your FoodieGo Cart
+            </h2>
+            <p class="text-muted mb-0">Review your selected items and provide delivery details</p>
+        </div>
+        <a href="{% url 'main:home' %}" class="btn btn-outline-dark font-weight-bold rounded-pill px-3">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Continue Browsing
+        </a>
+    </div>
+
+    {% if cart_items %}
+        <form action="{% url 'main:ordered' %}" method="post" id="checkoutForm">
+            {% csrf_token %}
+            <div class="cart-layout">
+                <!-- Cart Items & Delivery Information -->
+                <div>
+                    <!-- Items Card -->
+                    <div class="cart-items-panel mb-4">
+                        <h5 class="font-weight-bold text-dark mb-3 pb-2 border-bottom">
+                            Selected Dishes ({{ count }} items)
+                        </h5>
+
+                        {% for ci in cart_items %}
+                            <div class="cart-item-card" id="cartItemRow{{ ci.id }}">
+                                <div class="d-flex align-items-center gap-3" style="gap: 1rem; flex: 1;">
+                                    <img src="{{ ci.item.get_display_image }}" 
+                                         onerror="this.onerror=null; this.src='{% static 'images/fallback_food.svg' %}';"
+                                         alt="{{ ci.item.title }}"
+                                         style="width: 65px; height: 65px; border-radius: 8px; object-fit: cover;">
+                                    <div>
+                                        {% if ci.item.is_veg %}
+                                            <span class="badge badge-success px-2 py-0" style="font-size: 0.65rem;">● Veg</span>
+                                        {% else %}
+                                            <span class="badge badge-danger px-2 py-0" style="font-size: 0.65rem;">● Non-Veg</span>
+                                        {% endif %}
+                                        <h6 class="font-weight-bold text-dark mb-0 mt-1">{{ ci.item.title }}</h6>
+                                        <div class="small text-muted">
+                                            {% if ci.item.restaurant %}{{ ci.item.restaurant.name }} • {% endif %}₹{{ ci.item.price|floatformat:0 }} each
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Quantity Controls -->
+                                <div class="d-flex align-items-center" style="gap: 1.5rem;">
+                                    <div class="qty-counter">
+                                        <button type="submit" 
+                                                formaction="{% url 'main:update_cart_quantity' ci.id %}?action=decrease"
+                                                class="qty-btn" 
+                                                id="qtyDec{{ ci.id }}"
+                                                title="Decrease quantity">
+                                            <i class="fa-solid fa-minus"></i>
+                                        </button>
+                                        <span class="qty-number" id="qtyVal{{ ci.id }}">{{ ci.quantity }}</span>
+                                        <button type="submit" 
+                                                formaction="{% url 'main:update_cart_quantity' ci.id %}?action=increase"
+                                                class="qty-btn" 
+                                                id="qtyInc{{ ci.id }}"
+                                                title="Increase quantity">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="font-weight-bold text-dark text-right" style="min-width: 75px;">
+                                        ₹{{ ci.subtotal|floatformat:0 }}
+                                    </div>
+
+                                    <a href="{% url 'main:remove-from-cart' ci.id %}" 
+                                       class="text-danger small" 
+                                       title="Remove dish"
+                                       id="deleteBtn{{ ci.id }}">
+                                        <i class="fa-regular fa-trash-can"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Delivery & Contact Info Card -->
+                    <div class="cart-items-panel">
+                        <h5 class="font-weight-bold text-dark mb-3 pb-2 border-bottom">
+                            <i class="fa-solid fa-truck text-primary mr-1"></i> Delivery & Contact Details
+                        </h5>
+
+                        <div class="form-group mb-3">
+                            <label class="font-weight-bold small text-muted">Delivery Address in Bengaluru *</label>
+                            <input type="text" 
+                                   name="address" 
+                                   class="form-control" 
+                                   required 
+                                   value="{{ default_address }}"
+                                   placeholder="Flat / House No., Street, Area (e.g. #42, 5th Cross, HSR Layout Sector 2)"
+                                   id="checkoutAddressInput">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 form-group mb-3">
+                                <label class="font-weight-bold small text-muted">Contact Phone Number *</label>
+                                <input type="tel" 
+                                       name="phone" 
+                                       class="form-control" 
+                                       required 
+                                       pattern="[0-9]{10,15}"
+                                       minlength="10"
+                                       maxlength="15"
+                                       value="{{ default_phone }}"
+                                       placeholder="10-digit mobile number (e.g. 9876543210)"
+                                       title="Please enter a valid 10-digit mobile phone number"
+                                       id="checkoutPhoneInput">
+                                <small class="form-text text-muted">Must be at least 10 digits.</small>
+                            </div>
+                            <div class="col-md-6 form-group mb-3">
+                                <label class="font-weight-bold small text-muted">Cooking / Delivery Instructions</label>
+                                <input type="text" 
+                                       name="instructions" 
+                                       class="form-control" 
+                                       placeholder="e.g. Less spicy, ring the bell twice">
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-0">
+                            <label class="font-weight-bold small text-muted d-block mb-2">Preferred Payment Method</label>
+                            <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" id="payRazorpay" name="payment_method" value="Razorpay" class="custom-control-input" checked>
+                                <label class="custom-control-label font-weight-bold text-primary" for="payRazorpay">
+                                    <i class="fa-solid fa-shield-halved mr-1"></i> Razorpay (Cards / UPI)
+                                </label>
+                            </div>
+                            <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" id="payCod" name="payment_method" value="Cash On Delivery" class="custom-control-input">
+                                <label class="custom-control-label font-weight-bold" for="payCod">Cash on Delivery</label>
+                            </div>
+                            <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" id="payUpi" name="payment_method" value="UPI" class="custom-control-input">
+                                <label class="custom-control-label font-weight-bold" for="payUpi">Simulated UPI</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bill Details Sidebar -->
+                <div>
+                    <div class="bill-panel sticky-top" style="top: 85px;">
+                        <h5 class="font-weight-bold text-dark mb-3 pb-2 border-bottom">Bill Summary</h5>
+
+                        <!-- Coupon Input in Cart -->
+                        <div class="mb-3 pt-2">
+                            {% if applied_coupon %}
+                                <div class="p-2 bg-light rounded border border-success d-flex justify-content-between align-items-center small">
+                                    <div>
+                                        <span class="badge badge-success font-weight-bold">{{ applied_coupon.code }}</span>
+                                        <span class="text-success font-weight-bold ml-1">-₹{{ discount_amount|floatformat:2 }}</span>
+                                    </div>
+                                    <a href="{% url 'main:remove_coupon' %}?next={% url 'main:cart' %}" class="small text-danger font-weight-bold">Remove</a>
+                                </div>
+                            {% else %}
+                                <form action="{% url 'main:apply_coupon' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{% url 'main:cart' %}">
+                                    <div class="input-group input-group-sm">
+                                        <input type="text" name="coupon_code" class="form-control text-uppercase font-weight-bold" placeholder="Promo code (e.g. SWIGGY50)">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-dark font-weight-bold" type="submit">Apply</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            {% endif %}
+                        </div>
+
+                        <div class="bill-row">
+                            <span>Item Total</span>
+                            <span class="font-weight-bold text-dark">₹{{ subtotal|floatformat:2 }}</span>
+                        </div>
+
+                        <div class="bill-row">
+                            <span>Delivery Partner Fee</span>
+                            {% if delivery_fee == 0 %}
+                                <span class="text-success font-weight-bold">FREE</span>
+                            {% else %}
+                                <span>₹{{ delivery_fee|floatformat:2 }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if subtotal < 300 and subtotal > 0 %}
+                            <div class="alert alert-info py-2 px-3 small rounded-sm mb-3">
+                                <i class="fa-solid fa-bolt mr-1"></i> Add ₹{{ 300|add:"-subtotal"|floatformat:0 }} more for <strong>FREE Delivery</strong>!
+                            </div>
+                        {% endif %}
+
+                        <div class="bill-row">
+                            <span>Govt Taxes & Packaging (5%)</span>
+                            <span>₹{{ tax_amount|floatformat:2 }}</span>
+                        </div>
+
+                        {% if applied_coupon and discount_amount > 0 %}
+                            <div class="bill-row text-success font-weight-bold">
+                                <span>Coupon Discount ({{ applied_coupon.code }})</span>
+                                <span>- ₹{{ discount_amount|floatformat:2 }}</span>
+                            </div>
+                        {% endif %}
+
+                        <div class="bill-row total-row">
+                            <span>TO PAY</span>
+                            <span class="text-primary font-weight-extrabold" id="grandTotalVal">₹{{ total|floatformat:2 }}</span>
+                        </div>
+
+                        <a href="{% url 'main:checkout' %}" class="btn btn-warning btn-lg btn-block font-weight-bold text-dark py-3 mb-2" style="background: #fc8019; border-color: #fc8019; color: #fff !important; border-radius: 12px;">
+                            Proceed to Checkout <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </a>
+
+                        <button type="submit" class="btn btn-sm btn-outline-dark btn-block font-weight-bold py-2" id="placeOrderBtn" style="border-radius: 8px;">
+                            Quick 1-Click Order (COD)
+                        </button>
+
+                        <div class="text-center mt-3 small text-muted">
+                            <i class="fa-solid fa-shield-halved text-success mr-1"></i> 100% Safe & Contactless Delivery
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-lg shadow-sm border my-4">
+            <div style="font-size: 3.5rem; color: #cbd5e1;" class="mb-3">
+                <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+            <h4 class="font-weight-bold text-dark">Your cart is currently empty</h4>
+            <p class="text-muted mb-4">Good food is always cooking! Explore restaurants and add your favorite dishes.</p>
+            <a href="{% url 'main:home' %}" class="btn btn-primary font-weight-bold rounded-pill px-4 py-2">
+                Explore Bengaluru Restaurants
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('checkoutForm');
+    const btn = document.getElementById('placeOrderBtn');
+    if (form && btn) {
+        form.addEventListener('submit', function(e) {
+            if (form.checkValidity()) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Processing Order...';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

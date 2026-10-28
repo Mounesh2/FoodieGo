@@ -1,0 +1,62 @@
+{% extends "main/layout.html" %}
+{% load static %}
+
+{% block title %}Completed Orders Archive — FoodieGo 2.0 Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="font-weight-extrabold text-dark mb-1">
+                <i class="fa-solid fa-clipboard-check text-success mr-2"></i> Completed & Delivered Orders
+            </h2>
+            <p class="text-muted mb-0">Delivered food orders history and audit log</p>
+        </div>
+        <a href="{% url 'main:admin_dashboard' %}" class="btn btn-outline-dark font-weight-bold rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left mr-1"></i> Dashboard
+        </a>
+    </div>
+
+    {% if orders %}
+        <div class="card border-0 shadow-sm rounded-lg overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Order Ref</th>
+                            <th>Customer</th>
+                            <th>Delivery Address</th>
+                            <th>Delivered On</th>
+                            <th>Payment</th>
+                            <th>Total Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ord in orders %}
+                            <tr>
+                                <td>
+                                    <strong class="font-monospace text-dark">{{ ord.order_number }}</strong>
+                                </td>
+                                <td>{{ ord.user.username }}</td>
+                                <td><span class="small text-muted">{{ ord.delivery_address }}</span></td>
+                                <td><span class="small text-muted">{{ ord.delivery_date|date:"d M Y, h:i A"|default:ord.created_at }}</span></td>
+                                <td>
+                                    <span class="badge badge-light border">{{ ord.payment_method }}</span>
+                                    {% if ord.is_paid %}
+                                        <span class="badge badge-success font-weight-bold ml-1">PAID</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong class="text-success font-weight-bold">₹{{ ord.total_amount|floatformat:2 }}</strong></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm rounded-lg p-5 text-center text-muted">
+            <p class="mb-0">No completed orders archived yet.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

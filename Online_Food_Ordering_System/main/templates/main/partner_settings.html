@@ -1,0 +1,99 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block title %}Outlet Settings — {{ restaurant.name }} (FoodieGo Partner){% endblock %}
+
+{% block content %}
+<div class="partner-portal-wrapper py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container" style="max-width: 800px;">
+        <!-- Breadcrumb & Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0 mb-1 small">
+                        <li class="breadcrumb-item"><a href="{% url 'main:restaurant_portal_overview' %}">Kitchen Overview</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Outlet Settings</li>
+                    </ol>
+                </nav>
+                <h3 class="font-weight-bold text-dark mb-0">
+                    <i class="fa-solid fa-gear text-warning mr-2"></i> Restaurant Outlet Settings
+                </h3>
+                <p class="small text-muted mb-0">{{ restaurant.name }} • Control operational hours, store availability, and contact details.</p>
+            </div>
+            <a href="{% url 'main:restaurant_portal_overview' %}" class="btn btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 8px;">
+                &larr; Back to Overview
+            </a>
+        </div>
+
+        <!-- Settings Form Card -->
+        <div class="card border-0 shadow-sm rounded-lg p-4 bg-white" style="border-radius: 16px;">
+            <form action="{% url 'main:restaurant_portal_settings' %}" method="post">
+                {% csrf_token %}
+
+                <!-- Operational Status Switch -->
+                <div class="p-3 rounded-lg mb-4 {% if restaurant.is_open %}bg-light border border-success{% else %}bg-light border border-danger{% endif %}" style="border-radius: 12px;">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" name="is_open" class="custom-control-input" id="isOpenSwitch" {% if restaurant.is_open %}checked{% endif %}>
+                        <label class="custom-control-label font-weight-bold h6 mb-0 text-dark" for="isOpenSwitch">
+                            Accepting Online Orders Now (Open Status)
+                        </label>
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        Turn off if your kitchen is taking a break or closing early for the day. Customers will see "Closed Now" badge.
+                    </small>
+                </div>
+
+                <!-- Timings -->
+                <h6 class="font-weight-bold text-dark mb-3 border-bottom pb-2">
+                    <i class="fa-regular fa-clock text-primary mr-1"></i> Operating Hours
+                </h6>
+                <div class="row mb-3">
+                    <div class="col-md-6 form-group">
+                        <label class="small font-weight-bold text-muted mb-1">Opening Time</label>
+                        <input type="text" name="opening_time" value="{{ restaurant.opening_time|default:'10:00 AM' }}" class="form-control" placeholder="e.g. 10:00 AM" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="small font-weight-bold text-muted mb-1">Closing Time</label>
+                        <input type="text" name="closing_time" value="{{ restaurant.closing_time|default:'11:00 PM' }}" class="form-control" placeholder="e.g. 11:00 PM" required>
+                    </div>
+                </div>
+
+                <!-- Delivery & Pricing Estimates -->
+                <h6 class="font-weight-bold text-dark mb-3 border-bottom pb-2">
+                    <i class="fa-solid fa-motorcycle text-warning mr-1"></i> Delivery & Pricing Estimates
+                </h6>
+                <div class="row mb-3">
+                    <div class="col-md-6 form-group">
+                        <label class="small font-weight-bold text-muted mb-1">Estimated Delivery Time (Minutes)</label>
+                        <input type="number" name="estimated_delivery_minutes" value="{{ restaurant.estimated_delivery_minutes }}" class="form-control" min="10" max="120" required>
+                    </div>
+                    <div class="col-md-6 form-group">
+                        <label class="small font-weight-bold text-muted mb-1">Average Cost for Two (₹)</label>
+                        <input type="number" name="average_cost_for_two" value="{{ restaurant.average_cost_for_two|floatformat:0 }}" class="form-control" min="50" max="5000" required>
+                    </div>
+                </div>
+
+                <!-- Contact & Location Info -->
+                <h6 class="font-weight-bold text-dark mb-3 border-bottom pb-2">
+                    <i class="fa-solid fa-location-dot text-danger mr-1"></i> Location & Contact Information
+                </h6>
+                <div class="form-group mb-3">
+                    <label class="small font-weight-bold text-muted mb-1">Kitchen / Outlet Contact Phone</label>
+                    <input type="tel" name="contact_phone" value="{{ restaurant.contact_phone|default:'+91 80 4123 4567' }}" class="form-control" placeholder="e.g. +91 80 4123 4567">
+                </div>
+                <div class="form-group mb-4">
+                    <label class="small font-weight-bold text-muted mb-1">Full Physical Outlet Address</label>
+                    <textarea name="address_details" class="form-control" rows="3" placeholder="Shop No., Ground Floor, Main Road, Bengaluru">{{ restaurant.address_details|default:restaurant.area }}</textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-right pt-2 border-top">
+                    <button type="submit" class="btn btn-warning font-weight-bold text-dark px-4 py-2" style="border-radius: 10px;">
+                        <i class="fa-solid fa-floppy-disk mr-1"></i> Save Outlet Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

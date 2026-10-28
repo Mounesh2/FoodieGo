@@ -1,0 +1,260 @@
+{% load static %}
+{% load get_group %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FoodieGo — Bengaluru Food Delivery Platform{% endblock %}</title>
+    <meta name="description" content="FoodieGo — Swiggy-inspired Bengaluru food delivery platform with 4 departments, 18 pages, real-time order tracking, and REST APIs.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 4.6 (for standard grid & components) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FoodieGo Custom Styles -->
+    <link rel="stylesheet" href="{% static 'main/foodiego.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- Main FoodieGo Header Navigation -->
+    <nav class="foodiego-navbar">
+        <div class="container">
+            <div class="brand-wrapper">
+                <a href="{% url 'main:home' %}" class="brand-logo" id="brandLogo">
+                    <span class="logo-icon">🔥</span>
+                    <span>FoodieGo</span>
+                    <span class="version-tag">2.2</span>
+                </a>
+
+                <!-- Bengaluru Location Selector Dropdown -->
+                <div class="dropdown d-none d-md-block">
+                    <button class="bengaluru-badge btn btn-link text-decoration-none dropdown-toggle border-0" type="button" id="headerLocationDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa-solid fa-location-dot text-danger mr-1"></i>
+                        <span class="font-weight-bold">Bengaluru</span>
+                        <span class="small text-muted ml-1">{% if selected_area %}({{ selected_area }}){% else %}Citywide{% endif %}</span>
+                    </button>
+                    <div class="dropdown-menu shadow border-0" aria-labelledby="headerLocationDropdown" style="max-height: 300px; overflow-y: auto;">
+                        <h6 class="dropdown-header text-uppercase font-weight-bold">Bengaluru Neighborhoods</h6>
+                        <a class="dropdown-item {% if not selected_area %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}">
+                            <i class="fa-solid fa-map-pin mr-2 text-muted"></i>All Localities
+                        </a>
+                        <a class="dropdown-item {% if selected_area == 'Koramangala' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}?area=Koramangala">Koramangala</a>
+                        <a class="dropdown-item {% if selected_area == 'Indiranagar' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}?area=Indiranagar">Indiranagar</a>
+                        <a class="dropdown-item {% if selected_area == 'HSR Layout' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}?area=HSR+Layout">HSR Layout</a>
+                        <a class="dropdown-item {% if selected_area == 'Whitefield' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}?area=Whitefield">Whitefield</a>
+                        <a class="dropdown-item {% if selected_area == 'Jayanagar' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}?area=Jayanagar">Jayanagar</a>
+                        <a class="dropdown-item {% if selected_area == 'BTM Layout' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}?area=BTM+Layout">BTM Layout</a>
+                        <a class="dropdown-item {% if selected_area == 'JP Nagar' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}?area=JP+Nagar">JP Nagar</a>
+                        <a class="dropdown-item {% if selected_area == 'Malleshwaram' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:restaurants' %}?area=Malleshwaram">Malleshwaram</a>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="nav-links mb-0">
+                <li>
+                    <a href="{% url 'main:home' %}" class="nav-link-btn" id="navHome">
+                        <i class="fa-solid fa-compass"></i>
+                        <span>Explore</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'main:search' %}" class="nav-link-btn" id="navSearch">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span class="d-none d-sm-inline">Search</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'main:restaurants' %}" class="nav-link-btn" id="navRestaurants">
+                        <i class="fa-solid fa-store"></i>
+                        <span class="d-none d-sm-inline">Restaurants</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/api/docs/" target="_blank" class="nav-link-btn api-docs-btn" id="navApiDocs" title="OpenAPI Swagger UI Documentation">
+                        <i class="fa-solid fa-code"></i>
+                        <span class="d-none d-md-inline">Swagger</span>
+                    </a>
+                </li>
+
+                {% if user.is_authenticated %}
+                    <!-- Role-specific Dashboard Direct Links -->
+                    {% if is_restaurant_role %}
+                        <li>
+                            <a href="{% url 'main:restaurant_portal_overview' %}" class="nav-link-btn text-warning font-weight-bold" id="navRestaurantPortal">
+                                <i class="fa-solid fa-kitchen-set"></i>
+                                <span>Kitchen</span>
+                            </a>
+                        </li>
+                    {% elif is_delivery_role %}
+                        <li>
+                            <a href="{% url 'main:delivery_portal_overview' %}" class="nav-link-btn text-info font-weight-bold" id="navDeliveryPortal">
+                                <i class="fa-solid fa-motorcycle"></i>
+                                <span>Rider Hub</span>
+                            </a>
+                        </li>
+                    {% elif is_admin_role or user.is_superuser or user.is_staff %}
+                        <li>
+                            <a href="{% url 'main:admin_portal_overview' %}" class="nav-link-btn text-danger font-weight-bold" id="navAdminPortal">
+                                <i class="fa-solid fa-chart-line"></i>
+                                <span>Admin</span>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li>
+                        <a href="{% url 'main:order_details' %}" class="nav-link-btn" id="navOrders">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <span class="d-none d-sm-inline">Orders</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'main:cart' %}" class="nav-link-btn cart-btn" id="navCart">
+                            <i class="fa-solid fa-bag-shopping"></i>
+                            <span>Cart</span>
+                            {% if cart_count %}
+                                <span class="cart-count-badge">{{ cart_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="dropdown">
+                        <button class="nav-link-btn dropdown-toggle border-0 bg-transparent" type="button" id="userMenuDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa-solid fa-circle-user text-primary" style="font-size: 1.15rem;"></i>
+                            <span class="font-weight-bold ml-1">{{ user.username }}</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right shadow-sm border-0" aria-labelledby="userMenuDropdown">
+                            <div class="px-3 py-2 border-bottom">
+                                <div class="font-weight-bold text-dark">{{ user.username }}</div>
+                                <span class="badge badge-light border text-muted small">{{ current_user_role }}</span>
+                            </div>
+                            <a class="dropdown-item py-2" href="{% url 'accounts:profile' %}">
+                                <i class="fa-solid fa-address-card mr-2 text-muted"></i>Profile & Saved Addresses
+                            </a>
+                            <a class="dropdown-item py-2" href="{% url 'main:order_details' %}">
+                                <i class="fa-solid fa-receipt mr-2 text-muted"></i>My Orders
+                            </a>
+
+                            {% if is_restaurant_role or is_delivery_role or is_admin_role or user.is_superuser or user.is_staff %}
+                                <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header text-uppercase small font-weight-bold">Department Portals</h6>
+                                {% if is_restaurant_role %}
+                                    <a class="dropdown-item py-2" href="{% url 'main:restaurant_portal_overview' %}">
+                                        <i class="fa-solid fa-kitchen-set mr-2 text-warning"></i>Restaurant Kitchen Dashboard
+                                    </a>
+                                {% endif %}
+                                {% if is_delivery_role %}
+                                    <a class="dropdown-item py-2" href="{% url 'main:delivery_portal_overview' %}">
+                                        <i class="fa-solid fa-motorcycle mr-2 text-info"></i>Delivery Rider Dashboard
+                                    </a>
+                                {% endif %}
+                                {% if is_admin_role or user.is_superuser or user.is_staff %}
+                                    <a class="dropdown-item py-2" href="{% url 'main:admin_portal_overview' %}">
+                                        <i class="fa-solid fa-chart-line mr-2 text-danger"></i>Platform Admin Dashboard
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+
+                            <div class="dropdown-divider"></div>
+                            <form action="{% url 'accounts:logout' %}" method="post" class="px-2 py-1">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger btn-block"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i>Sign Out</button>
+                            </form>
+                        </div>
+                    </li>
+                {% else %}
+                    <li>
+                        <a href="{% url 'accounts:login' %}" class="nav-link-btn" id="navLogin">
+                            <i class="fa-regular fa-user"></i>
+                            <span>Sign In</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'accounts:signup' %}" class="nav-link-btn cart-btn" id="navSignup">
+                            <span>Register</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Global Toast / Alert Messages -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'info' %}primary{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show shadow-sm" role="alert" style="border-radius: 10px;">
+                    <i class="fa-solid fa-circle-info mr-2"></i>
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content Area -->
+    <main role="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- FoodieGo Footer -->
+    <footer class="foodiego-footer mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="brand-logo mb-3" style="color: #ffffff;">
+                        <span class="logo-icon">🔥</span>
+                        <span>FoodieGo</span>
+                    </div>
+                    <p class="text-muted small">
+                        Complete Bengaluru food delivery platform inspired by Swiggy.
+                        Featuring 4 departments, 18 pages, real-time kitchen tracking, and REST APIs.
+                    </p>
+                </div>
+                <div class="col-lg-2 col-md-3 col-6 mb-4">
+                    <h6 class="text-white font-weight-bold mb-3">Customer Web</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2"><a href="{% url 'main:home' %}">Home & Specials</a></li>
+                        <li class="mb-2"><a href="{% url 'main:search' %}">Search Food & Places</a></li>
+                        <li class="mb-2"><a href="{% url 'main:restaurants' %}">Restaurants Directory</a></li>
+                        <li class="mb-2"><a href="{% url 'main:restaurants' %}?veg=true">Pure Veg Only</a></li>
+                        <li class="mb-2"><a href="{% url 'accounts:profile' %}">Profile & Addresses</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-3 col-6 mb-4">
+                    <h6 class="text-white font-weight-bold mb-3">Partner & Portals</h6>
+                    <ul class="list-unstyled small mb-0">
+                        {% if is_restaurant_role %}
+                            <li class="mb-2"><a href="{% url 'main:restaurant_portal_overview' %}"><i class="fa-solid fa-kitchen-set text-warning mr-1"></i>Kitchen Dashboard</a></li>
+                        {% endif %}
+                        {% if is_delivery_role %}
+                            <li class="mb-2"><a href="{% url 'main:delivery_portal_overview' %}"><i class="fa-solid fa-motorcycle text-info mr-1"></i>Delivery Hub</a></li>
+                        {% endif %}
+                        {% if is_admin_role or user.is_superuser %}
+                            <li class="mb-2"><a href="{% url 'main:admin_portal_overview' %}"><i class="fa-solid fa-chart-line text-danger mr-1"></i>Admin Operations</a></li>
+                        {% endif %}
+                        <li class="mb-2"><a href="/api/docs/" target="_blank"><i class="fa-solid fa-bolt text-warning mr-1"></i>OpenAPI / Swagger</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3 col-md-12 mb-4">
+                    <h6 class="text-white font-weight-bold mb-3">Coverage Hubs</h6>
+                    <p class="small text-muted mb-2">HSR Layout • Koramangala • Indiranagar • Whitefield • Jayanagar • BTM Layout • JP Nagar</p>
+                    <div class="mt-3 text-muted small">
+                        &copy; 2026 FoodieGo. Built with Django 6 & DRF.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap & Utility Scripts -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

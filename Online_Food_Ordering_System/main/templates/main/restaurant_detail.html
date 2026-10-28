@@ -1,0 +1,253 @@
+{% extends "main/layout.html" %}
+{% load static %}
+
+{% block title %}{{ restaurant.name }} — Order Online in {{ restaurant.area }}, Bengaluru | FoodieGo{% endblock %}
+
+{% block content %}
+<!-- Restaurant Hero Banner -->
+<section class="restaurant-hero">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb bg-transparent px-0 py-1 small">
+                <li class="breadcrumb-item"><a href="{% url 'main:home' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'main:home' %}?area={{ restaurant.area }}">{{ restaurant.area }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ restaurant.name }}</li>
+            </ol>
+        </nav>
+
+        <div class="rest-hero-inner">
+            <img src="{{ restaurant.get_display_image }}" 
+                 onerror="this.onerror=null; this.src='{% static 'images/fallback_restaurant.svg' %}';"
+                 alt="{{ restaurant.name }}" 
+                 class="rest-hero-img">
+
+            <div class="rest-hero-info">
+                <h1 class="rest-title">{{ restaurant.name }}</h1>
+                <p class="text-muted mb-2 font-weight-medium">
+                    <i class="fa-solid fa-utensils text-primary mr-1"></i> {{ restaurant.cuisine }} • 
+                    <i class="fa-solid fa-location-dot text-danger mr-1"></i> {{ restaurant.area }}, {{ restaurant.city }}
+                </p>
+
+                <div class="rest-meta-pills">
+                    <div class="rest-meta-pill" style="background: #ecfdf5; color: #047857;">
+                        <i class="fa-solid fa-star text-warning"></i>
+                        <span>{{ restaurant.rating|floatformat:1 }} ({{ restaurant.rating_count }}+ ratings)</span>
+                    </div>
+                    <div class="rest-meta-pill">
+                        <i class="fa-solid fa-motorcycle text-primary"></i>
+                        <span>{{ restaurant.estimated_delivery_minutes }} Mins Delivery</span>
+                    </div>
+                    <div class="rest-meta-pill">
+                        <i class="fa-solid fa-wallet text-secondary"></i>
+                        <span>₹{{ restaurant.average_cost_for_two|floatformat:0 }} for two</span>
+                    </div>
+                    {% if restaurant.is_open %}
+                        <span class="badge badge-success px-3 py-2 font-weight-bold">Open Now</span>
+                    {% else %}
+                        <span class="badge badge-secondary px-3 py-2 font-weight-bold">Closed</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Menu & Category Filter Section -->
+<section class="container pb-5">
+    <div class="row">
+        <!-- Sidebar Category Filters -->
+        <div class="col-lg-3 mb-4">
+            <div class="card border-0 shadow-sm rounded-lg p-3 sticky-top" style="top: 85px;">
+                <h6 class="font-weight-bold mb-3 text-dark">Menu Categories</h6>
+
+                <!-- Pure Veg Toggle -->
+                <div class="custom-control custom-switch mb-3 pb-3 border-bottom">
+                    <input type="checkbox" class="custom-control-input" id="vegSwitch" 
+                           onchange="location.href='?veg=' + this.checked + '{% if category_filter %}&category={{ category_filter }}{% endif %}'"
+                           {% if veg_only %}checked{% endif %}>
+                    <label class="custom-control-label font-weight-bold text-success" for="vegSwitch">
+                        Pure Veg Only
+                    </label>
+                </div>
+
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item mb-1">
+                        <a href="?{% if veg_only %}veg=true{% endif %}" 
+                           class="nav-link py-2 px-3 rounded-pill {% if not category_filter %}bg-primary text-white font-weight-bold{% else %}text-dark{% endif %}">
+                            All Items ({{ menu_items.count }})
+                        </a>
+                    </li>
+                    {% for cat in categories %}
+                        <li class="nav-item mb-1">
+                            <a href="?category={{ cat|urlencode }}{% if veg_only %}&veg=true{% endif %}" 
+                               class="nav-link py-2 px-3 rounded-pill {% if category_filter == cat %}bg-primary text-white font-weight-bold{% else %}text-dark{% endif %}">
+                                {{ cat }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Menu Items List -->
+        <div class="col-lg-9">
+            <!-- In-Menu Search Bar -->
+            <div class="mb-4">
+                <form method="get" class="d-flex" style="gap: 0.5rem;" id="menuSearchForm">
+                    {% if veg_only %}<input type="hidden" name="veg" value="true">{% endif %}
+                    {% if category_filter %}<input type="hidden" name="category" value="{{ category_filter }}">{% endif %}
+                    <div class="input-group shadow-sm rounded-lg overflow-hidden">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text bg-white border-right-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        </div>
+                        <input type="text" 
+                               name="search" 
+                               value="{{ menu_search }}" 
+                               class="form-control border-left-0 py-4" 
+                               placeholder="Search dishes in {{ restaurant.name }} (e.g. Dosa, Paneer, Biryani, Coffee)..." 
+                               id="menuSearchInput">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary font-weight-bold px-4" type="submit">Search Menu</button>
+                            {% if menu_search %}
+                                <a href="?{% if veg_only %}veg=true{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}" class="btn btn-outline-secondary font-weight-bold">Clear</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {% if grouped_menu %}
+                {% for cat, items in grouped_menu.items %}
+                    <div class="menu-category-section" id="cat-{{ forloop.counter }}">
+                        <h3 class="category-title">{{ cat }} ({{ items|length }})</h3>
+                        <div class="dishes-list">
+                            {% for dish in items %}
+                                <div class="dish-item-row" id="dishRow{{ dish.id }}">
+                                    <div class="dish-info">
+                                        <div class="d-flex align-items-center mb-1">
+                                            {% if dish.is_veg %}
+                                                <div class="dish-veg-badge mr-2" title="Vegetarian"><span class="dot"></span></div>
+                                                <span class="small text-success font-weight-bold mr-2">Pure Veg</span>
+                                            {% else %}
+                                                <div class="dish-nonveg-badge mr-2" title="Non-Vegetarian"><span class="dot"></span></div>
+                                                <span class="small text-danger font-weight-bold mr-2">Non-Veg</span>
+                                            {% endif %}
+
+                                            {% if not dish.is_available %}
+                                                <span class="badge badge-secondary font-weight-bold">Sold Out</span>
+                                            {% else %}
+                                                <span class="badge badge-light text-muted small"><i class="fa-solid fa-check text-success mr-1"></i>In Stock</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <h4 class="mb-1">
+                                            <a href="{% url 'main:dishes' dish.slug %}" class="dish-name">{{ dish.title }}</a>
+                                        </h4>
+                                        <div class="dish-price">₹{{ dish.price|floatformat:0 }}</div>
+                                        <p class="dish-description">{{ dish.description }}</p>
+                                        {% if dish.offer_label %}
+                                            <span class="badge badge-pill badge-warning text-dark font-weight-bold">
+                                                <i class="fa-solid fa-tag mr-1"></i> {{ dish.offer_label }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="dish-media-action">
+                                        <img src="{{ dish.get_display_image }}" 
+                                             onerror="this.onerror=null; this.src='{% static 'images/fallback_food.svg' %}';"
+                                             alt="{{ dish.title }}" 
+                                             class="dish-thumb">
+                                        {% if dish.cart_qty and dish.cart_qty > 0 %}
+                                            <div class="dish-qty-control" id="dishQtyControl{{ dish.id }}">
+                                                <a href="{% url 'main:update_cart_quantity' dish.cart_pk %}?action=decrease&next={{ request.get_full_path|urlencode }}" 
+                                                   class="qty-btn minus" 
+                                                   id="decDish{{ dish.id }}"
+                                                   title="Decrease quantity">
+                                                    <i class="fa-solid fa-minus"></i>
+                                                </a>
+                                                <span class="qty-count" id="qtySpan{{ dish.id }}">{{ dish.cart_qty }}</span>
+                                                <a href="{% url 'main:update_cart_quantity' dish.cart_pk %}?action=increase&next={{ request.get_full_path|urlencode }}" 
+                                                   class="qty-btn plus" 
+                                                   id="incDish{{ dish.id }}"
+                                                   title="Increase quantity">
+                                                    <i class="fa-solid fa-plus"></i>
+                                                </a>
+                                            </div>
+                                        {% else %}
+                                            <a href="{% url 'main:add-to-cart' dish.slug %}?next={{ request.get_full_path|urlencode }}" 
+                                               class="btn-add-cart"
+                                               id="addBtn{{ dish.id }}">
+                                                + ADD
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% elif menu_items %}
+                <div class="dishes-list">
+                    {% for dish in menu_items %}
+                        <div class="dish-item-row" id="dishRow{{ dish.id }}">
+                            <div class="dish-info">
+                                <div class="d-flex align-items-center mb-1">
+                                    {% if dish.is_veg %}
+                                        <div class="dish-veg-badge mr-2" title="Vegetarian"><span class="dot"></span></div>
+                                        <span class="small text-success font-weight-bold mr-2">Pure Veg</span>
+                                    {% else %}
+                                        <div class="dish-nonveg-badge mr-2" title="Non-Vegetarian"><span class="dot"></span></div>
+                                        <span class="small text-danger font-weight-bold mr-2">Non-Veg</span>
+                                    {% endif %}
+
+                                    {% if not dish.is_available %}
+                                        <span class="badge badge-secondary font-weight-bold">Sold Out</span>
+                                    {% else %}
+                                        <span class="badge badge-light text-muted small"><i class="fa-solid fa-check text-success mr-1"></i>In Stock</span>
+                                    {% endif %}
+                                </div>
+                                <h4 class="mb-1">
+                                    <a href="{% url 'main:dishes' dish.slug %}" class="dish-name">{{ dish.title }}</a>
+                                </h4>
+                                <div class="dish-price">₹{{ dish.price|floatformat:0 }}</div>
+                                <p class="dish-description">{{ dish.description }}</p>
+                            </div>
+                            <div class="dish-media-action">
+                                <img src="{{ dish.get_display_image }}" 
+                                     onerror="this.onerror=null; this.src='{% static 'images/fallback_food.svg' %}';"
+                                     alt="{{ dish.title }}" 
+                                     class="dish-thumb">
+                                {% if dish.cart_qty and dish.cart_qty > 0 %}
+                                    <div class="dish-qty-control" id="dishQtyControl{{ dish.id }}">
+                                        <a href="{% url 'main:update_cart_quantity' dish.cart_pk %}?action=decrease&next={{ request.get_full_path|urlencode }}" 
+                                           class="qty-btn minus" 
+                                           id="decDish{{ dish.id }}">
+                                            <i class="fa-solid fa-minus"></i>
+                                        </a>
+                                        <span class="qty-count">{{ dish.cart_qty }}</span>
+                                        <a href="{% url 'main:update_cart_quantity' dish.cart_pk %}?action=increase&next={{ request.get_full_path|urlencode }}" 
+                                           class="qty-btn plus" 
+                                           id="incDish{{ dish.id }}">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <a href="{% url 'main:add-to-cart' dish.slug %}?next={{ request.get_full_path|urlencode }}" 
+                                       class="btn-add-cart"
+                                       id="addBtn{{ dish.id }}">
+                                        + ADD
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5 bg-white rounded-lg border">
+                    <i class="fa-solid fa-bowl-food text-muted mb-2" style="font-size: 2.5rem;"></i>
+                    <p class="text-muted mb-0">No dishes match your selected filter or search for this restaurant.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

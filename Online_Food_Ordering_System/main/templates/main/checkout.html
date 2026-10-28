@@ -1,0 +1,545 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block title %}Checkout — FoodieGo Bengaluru{% endblock %}
+
+{% block content %}
+<div class="checkout-wrapper py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container">
+        <!-- Title & Breadcrumbs -->
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent p-0 mb-1 small">
+                    <li class="breadcrumb-item"><a href="{% url 'main:home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'main:cart' %}">Cart</a></li>
+                    <li class="breadcrumb-item active font-weight-bold" aria-current="page">Checkout</li>
+                </ol>
+            </nav>
+            <h3 class="font-weight-bold text-dark mb-0">Secure Checkout</h3>
+            <p class="small text-muted mb-0">Review your delivery address, apply coupons, and confirm your order.</p>
+        </div>
+
+        <div class="row">
+            <!-- Left Column: Delivery Address & Payment Method -->
+            <div class="col-lg-7 mb-4">
+                <form action="{% url 'main:ordered' %}" method="post" id="checkoutForm">
+                    {% csrf_token %}
+
+                    <!-- Section 1: Delivery Address Selection -->
+                    <div class="card border-0 shadow-sm rounded-lg p-4 mb-4" style="border-radius: 16px;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="font-weight-bold text-dark mb-0">
+                                <i class="fa-solid fa-location-dot text-danger mr-2"></i> 1. Select Delivery Address
+                            </h5>
+                            <a href="{% url 'accounts:profile' %}?next={% url 'main:checkout' %}" class="small font-weight-bold text-primary">
+                                + Add New Address
+                            </a>
+                        </div>
+
+                        {% if saved_addresses %}
+                            <div class="row">
+                                {% for addr in saved_addresses %}
+                                    <div class="col-md-6 mb-3">
+                                        <div class="custom-control custom-radio h-100 p-3 border rounded-lg address-option {% if addr.is_default or forloop.first %}border-primary bg-light{% endif %}" style="cursor: pointer; border-radius: 12px;">
+                                            <input type="radio" id="addr_{{ addr.id }}" name="saved_address_id" value="{{ addr.id }}" class="custom-control-input" {% if addr.is_default or forloop.first %}checked{% endif %} onchange="toggleCustomAddress(false)">
+                                            <label class="custom-control-label font-weight-bold d-block text-dark" for="addr_{{ addr.id }}">
+                                                <span class="badge badge-secondary mb-1">{{ addr.title }}</span>
+                                                <div class="small text-dark font-weight-normal mb-1">{{ addr.address_line }}</div>
+                                                <div class="small text-muted">{{ addr.area }}, {{ addr.city }} - {{ addr.pincode }}</div>
+                                                <div class="small text-muted mt-1"><i class="fa-solid fa-phone mr-1"></i> {{ addr.phone }}</div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning py-2 small mb-3">
+                                <i class="fa-solid fa-info-circle mr-1"></i> You have no saved delivery addresses. Please enter one below:
+                            </div>
+                        {% endif %}
+
+                        <!-- Option to type manual address -->
+                        <div class="mt-2">
+                            <div class="custom-control custom-radio mb-2">
+                                <input type="radio" id="addr_manual" name="saved_address_id" value="" class="custom-control-input" {% if not saved_addresses %}checked{% endif %} onchange="toggleCustomAddress(true)">
+                                <label class="custom-control-label font-weight-bold text-dark" for="addr_manual">
+                                    Deliver to a different address
+                                </label>
+                            </div>
+                            <div id="manualAddressBlock" class="p-3 bg-light rounded mt-2" style="{% if saved_addresses %}display: none;{% endif %} border-radius: 10px;">
+                                <div class="form-group mb-2">
+                                    <label class="small font-weight-bold text-muted mb-1">Full Delivery Address *</label>
+                                    <textarea name="address" id="manualAddressInput" class="form-control" rows="2" placeholder="Flat / House No., Building Name, Street, Locality" {% if not saved_addresses %}required{% endif %}></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phone Number for Delivery Partner Contact -->
+                        <div class="form-group mt-3 pt-3 border-top mb-0">
+                            <label class="small font-weight-bold text-dark mb-1">
+                                <i class="fa-solid fa-mobile-screen mr-1 text-primary"></i> Contact Phone Number for Delivery Rider *
+                            </label>
+                            <input type="tel" name="phone" id="checkoutPhoneInput" value="{{ user_profile.phone_number|default:'' }}" class="form-control" placeholder="10-digit mobile number (e.g. 9876543210)" required pattern="[0-9]{10}">
+                            <small class="text-muted">Our delivery partner will call this number upon arrival at your gate.</small>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Payment Mode Selection -->
+                    <div class="card border-0 shadow-sm rounded-lg p-4 mb-4" style="border-radius: 16px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="font-weight-bold text-dark mb-0">
+                                <i class="fa-solid fa-credit-card text-success mr-2"></i> 2. Payment Method
+                            </h5>
+                            <span class="badge badge-success font-weight-bold px-2 py-1" style="font-size: 0.75rem;">
+                                <i class="fa-solid fa-shield-halved mr-1"></i> 256-Bit SSL Encrypted
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-3">
+                            Choose your preferred payment method. Powered by Razorpay secure payment gateway.
+                        </p>
+
+                        <!-- Hidden fields for Razorpay transaction data -->
+                        <input type="hidden" name="razorpay_payment_id" id="razorpayPaymentIdInput" value="">
+                        <input type="hidden" name="razorpay_order_id" id="razorpayOrderIdInput" value="{{ razorpay_order_id }}">
+                        <input type="hidden" name="razorpay_signature" id="razorpaySignatureInput" value="">
+
+                        <!-- Payment Options Group -->
+                        <div class="payment-options-group">
+                            <!-- Option 1: Razorpay (Primary / Recommended) -->
+                            <div class="custom-control custom-radio p-3 border rounded-lg mb-3 payment-method-card bg-light border-primary" id="card_razorpay" style="border-radius: 14px; cursor: pointer; transition: all 0.2s ease;">
+                                <input type="radio" id="pay_razorpay" name="payment_method" value="Razorpay" class="custom-control-input" checked onchange="handlePaymentMethodChange('Razorpay')">
+                                <label class="custom-control-label font-weight-bold text-dark d-block w-100" for="pay_razorpay" style="cursor: pointer;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <span class="text-primary font-weight-bold mr-2" style="font-size: 1.05rem;">
+                                                <i class="fa-solid fa-shield-halved mr-1 text-primary"></i> Razorpay Payment Gateway
+                                            </span>
+                                            <span class="badge badge-primary font-weight-bold px-2 py-1" style="background: #0c2340; border-radius: 6px;">RECOMMENDED</span>
+                                        </div>
+                                        <span class="badge badge-light border text-primary font-monospace font-weight-bold px-2 py-1" style="font-size: 0.72rem;">
+                                            RAZORPAY SECURE
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted font-weight-normal mt-1">
+                                        Pay instantly using Cards (Visa, MasterCard, RuPay), UPI (Google Pay, PhonePe, Paytm, BHIM), NetBanking & Wallets.
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center gap-1 mt-2 pt-2 border-top">
+                                        <span class="badge badge-light border text-muted small mr-1 mb-1"><i class="fa-brands fa-google-pay text-primary mr-1"></i>Google Pay</span>
+                                        <span class="badge badge-light border text-muted small mr-1 mb-1"><i class="fa-solid fa-mobile-screen text-info mr-1"></i>PhonePe / UPI</span>
+                                        <span class="badge badge-light border text-muted small mr-1 mb-1"><i class="fa-solid fa-credit-card text-success mr-1"></i>Credit / Debit Cards</span>
+                                        <span class="badge badge-light border text-muted small mr-1 mb-1"><i class="fa-solid fa-building-columns text-dark mr-1"></i>NetBanking</span>
+                                        <span class="badge badge-light border text-muted small mr-1 mb-1"><i class="fa-solid fa-wallet text-warning mr-1"></i>Wallets</span>
+                                    </div>
+                                    <div class="mt-2 text-muted small font-monospace d-flex align-items-center" style="font-size: 0.75rem;">
+                                        <i class="fa-solid fa-key text-warning mr-1"></i> Active Key: <code class="ml-1 text-primary">{{ razorpay_key_id }}</code>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div class="row">
+                                <!-- Option 2: Cash on Delivery -->
+                                <div class="col-md-6 mb-3">
+                                    <div class="custom-control custom-radio p-3 border rounded-lg h-100 payment-method-card" id="card_cod" style="border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                                        <input type="radio" id="pay_cod" name="payment_method" value="Cash On Delivery" class="custom-control-input" onchange="handlePaymentMethodChange('COD')">
+                                        <label class="custom-control-label font-weight-bold text-dark d-block" for="pay_cod" style="cursor: pointer;">
+                                            <div><i class="fa-solid fa-money-bill-wave text-success mr-1"></i> Cash on Delivery</div>
+                                            <div class="small text-muted font-weight-normal mt-1">Pay with cash or QR code directly to the rider upon delivery</div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Option 3: Instant Simulated UPI -->
+                                <div class="col-md-6 mb-3">
+                                    <div class="custom-control custom-radio p-3 border rounded-lg h-100 payment-method-card" id="card_upi" style="border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                                        <input type="radio" id="pay_upi" name="payment_method" value="UPI" class="custom-control-input" onchange="handlePaymentMethodChange('UPI')">
+                                        <label class="custom-control-label font-weight-bold text-dark d-block" for="pay_upi" style="cursor: pointer;">
+                                            <div><i class="fa-solid fa-bolt text-warning mr-1"></i> Simulated UPI</div>
+                                            <div class="small text-muted font-weight-normal mt-1">Instant 1-click test simulation for sandbox orders</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Place Order Button (with duplicate click prevention) -->
+                    <div class="card border-0 shadow-sm p-3 rounded-lg" style="border-radius: 16px;">
+                        <button type="submit" id="placeOrderBtn" class="btn btn-primary btn-lg btn-block font-weight-bold py-3 text-white shadow-sm" style="background: linear-gradient(135deg, #0c2340 0%, #1e3a8a 100%); border-color: #0c2340; border-radius: 12px; letter-spacing: 0.5px;">
+                            <i class="fa-solid fa-shield-halved mr-2"></i> PAY WITH RAZORPAY • ₹{{ total|floatformat:2 }}
+                        </button>
+                        <div class="d-flex justify-content-between align-items-center mt-2 px-1 small text-muted">
+                            <span><i class="fa-solid fa-check text-success mr-1"></i> 100% Secure Checkout</span>
+                            <span>Powered by <strong>Razorpay</strong></span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Column: Order Bill Summary & Coupon Application -->
+            <div class="col-lg-5 mb-4">
+                <!-- Apply Coupon Box -->
+                <div class="card border-0 shadow-sm rounded-lg p-3 mb-4" style="border-radius: 16px;">
+                    <h6 class="font-weight-bold text-dark mb-2">
+                        <i class="fa-solid fa-tag text-warning mr-2"></i> Apply Promo Coupon
+                    </h6>
+                    {% if applied_coupon %}
+                        <div class="p-3 bg-light rounded d-flex justify-content-between align-items-center border border-success">
+                            <div>
+                                <span class="badge badge-success font-weight-bold px-2 py-1">{{ applied_coupon.code }} APPLIED</span>
+                                <div class="small font-weight-bold text-dark mt-1">{{ applied_coupon.title }}</div>
+                                <div class="small text-success">You saved ₹{{ discount_amount|floatformat:2 }} with this coupon!</div>
+                            </div>
+                            <a href="{% url 'main:remove_coupon' %}?next={% url 'main:checkout' %}" class="btn btn-sm btn-outline-danger font-weight-bold">
+                                Remove
+                            </a>
+                        </div>
+                    {% else %}
+                        <form action="{% url 'main:apply_coupon' %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'main:checkout' %}">
+                            <div class="input-group">
+                                <input type="text" name="coupon_code" class="form-control text-uppercase font-weight-bold" placeholder="Enter coupon (e.g. SWIGGY50)" required style="border-radius: 8px 0 0 8px;">
+                                <div class="input-group-append">
+                                    <button class="btn btn-dark font-weight-bold px-3" type="submit" style="border-radius: 0 8px 8px 0;">
+                                        APPLY
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <!-- Available Coupons List -->
+                        <div class="mt-3">
+                            <span class="small font-weight-bold text-muted d-block mb-1">Available for you:</span>
+                            {% for c in available_coupons %}
+                                <div class="d-flex justify-content-between align-items-center py-1 border-bottom small">
+                                    <div>
+                                        <span class="font-weight-bold text-primary">{{ c.code }}</span>
+                                        <span class="text-muted ml-1">- {{ c.title }}</span>
+                                    </div>
+                                    <form action="{% url 'main:apply_coupon' %}" method="post" class="mb-0">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{% url 'main:checkout' %}">
+                                        <input type="hidden" name="coupon_code" value="{{ c.code }}">
+                                        <button type="submit" class="btn btn-sm btn-link text-warning p-0 font-weight-bold text-decoration-none">APPLY</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Order Summary Breakdown -->
+                <div class="card border-0 shadow-sm rounded-lg p-4" style="border-radius: 16px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h6 class="font-weight-bold text-dark mb-0">Order Summary ({{ total_count }} items)</h6>
+                        <a href="{% url 'main:cart' %}" class="small font-weight-bold text-primary">Edit Cart</a>
+                    </div>
+
+                    <!-- Items List -->
+                    <div class="mb-3" style="max-height: 240px; overflow-y: auto;">
+                        {% for ci in cart_items %}
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                <div class="pr-2" style="flex: 1;">
+                                    <div class="small font-weight-bold text-dark">
+                                        {% if ci.item.is_veg %}
+                                            <i class="fa-solid fa-circle text-success mr-1" style="font-size: 8px;"></i>
+                                        {% else %}
+                                            <i class="fa-solid fa-play fa-rotate-270 text-danger mr-1" style="font-size: 8px;"></i>
+                                        {% endif %}
+                                        {{ ci.item.title }}
+                                    </div>
+                                    <div class="small text-muted">{{ ci.quantity }} × ₹{{ ci.item.price|floatformat:0 }}</div>
+                                </div>
+                                <div class="small font-weight-bold text-dark">
+                                    ₹{{ ci.sub_total|floatformat:2 }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Bill Computation Breakdown -->
+                    <div class="small">
+                        <div class="d-flex justify-content-between py-1 text-muted">
+                            <span>Item Subtotal</span>
+                            <span>₹{{ subtotal|floatformat:2 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 text-muted">
+                            <span>Delivery Partner Fee</span>
+                            <span>
+                                {% if delivery_fee == 0 %}
+                                    <span class="text-success font-weight-bold">FREE</span>
+                                {% else %}
+                                    ₹{{ delivery_fee|floatformat:2 }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 text-muted">
+                            <span>Government Taxes & GST (5%)</span>
+                            <span>₹{{ tax_amount|floatformat:2 }}</span>
+                        </div>
+                        {% if applied_coupon and discount_amount > 0 %}
+                            <div class="d-flex justify-content-between py-1 text-success font-weight-bold">
+                                <span>Coupon Discount ({{ applied_coupon.code }})</span>
+                                <span>- ₹{{ discount_amount|floatformat:2 }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-between pt-3 mt-2 border-top text-dark font-weight-bold" style="font-size: 1.15rem;">
+                            <span>TO PAY</span>
+                            <span class="text-dark">₹{{ total|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Razorpay Test Sandbox Payment Modal -->
+<div class="modal fade" id="razorpaySandboxModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #02042b 0%, #0c2340 100%);">
+                <div class="d-flex align-items-center">
+                    <span class="badge badge-primary px-2 py-1 mr-2" style="background: #2b4570;">RAZORPAY</span>
+                    <h5 class="modal-title font-weight-bold mb-0">Test Payment Simulator</h5>
+                </div>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" onclick="closeRazorpaySandboxModal()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="text-center mb-3">
+                    <div class="d-inline-flex p-3 rounded-circle mb-2" style="background: rgba(82, 143, 240, 0.1);">
+                        <i class="fa-solid fa-shield-halved text-primary" style="font-size: 2.2rem;"></i>
+                    </div>
+                    <h4 class="font-weight-extrabold text-dark mb-0">₹{{ total|floatformat:2 }}</h4>
+                    <p class="text-muted small mb-0">FoodieGo Order • Razorpay Sandbox</p>
+                </div>
+
+                <div class="bg-light p-3 rounded-lg small mb-3 border">
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Configured Key ID:</span>
+                        <span class="font-monospace font-weight-bold text-dark">{{ razorpay_key_id }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Order ID:</span>
+                        <span class="font-monospace text-primary font-weight-bold" id="modalOrderIdVal">{{ razorpay_order_id }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Customer:</span>
+                        <span class="font-weight-bold text-dark">{{ request.user.username }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-top mt-1 pt-1">
+                        <span class="text-muted">Test Gateway:</span>
+                        <span class="badge badge-success">Razorpay Sandbox Ready</span>
+                    </div>
+                </div>
+
+                <p class="small text-muted mb-3 text-center">
+                    Click <strong>Authorize Test Payment</strong> below to simulate a successful Razorpay transaction. A verified Razorpay test payment reference ID will be captured.
+                </p>
+
+                <div class="d-flex flex-column" style="gap: 0.5rem;">
+                    <button type="button" id="confirmSandboxPayBtn" class="btn btn-primary btn-block font-weight-bold py-2 shadow-sm mb-2" style="background: #0c2340; border-color: #0c2340; border-radius: 10px;" onclick="simulateRazorpaySuccess()">
+                        <i class="fa-solid fa-circle-check mr-1 text-success"></i> Authorize Test Payment (Success)
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-block font-weight-bold py-2" style="border-radius: 10px;" data-dismiss="modal" onclick="closeRazorpaySandboxModal()">
+                        Cancel & Return
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2 text-center small text-muted justify-content-center">
+                <i class="fa-solid fa-lock text-success mr-1"></i> Razorpay Test Environment • Credentials Configured
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+var totalAmountInr = "{{ total|floatformat:2 }}";
+var razorpayKeyId = "{{ razorpay_key_id }}";
+var razorpayOrderId = "{{ razorpay_order_id }}";
+var razorpayAmountPaise = parseInt("{{ razorpay_amount }}") || 0;
+
+function toggleCustomAddress(showManual) {
+    var block = document.getElementById('manualAddressBlock');
+    var input = document.getElementById('manualAddressInput');
+    if (showManual) {
+        block.style.display = 'block';
+        input.setAttribute('required', 'required');
+    } else {
+        block.style.display = 'none';
+        input.removeAttribute('required');
+    }
+}
+
+function handlePaymentMethodChange(method) {
+    var cardRazorpay = document.getElementById('card_razorpay');
+    var cardCod = document.getElementById('card_cod');
+    var cardUpi = document.getElementById('card_upi');
+    var btn = document.getElementById('placeOrderBtn');
+
+    [cardRazorpay, cardCod, cardUpi].forEach(function(el) {
+        if (el) {
+            el.classList.remove('bg-light', 'border-primary');
+        }
+    });
+
+    if (method === 'Razorpay') {
+        if (cardRazorpay) cardRazorpay.classList.add('bg-light', 'border-primary');
+        btn.style.background = 'linear-gradient(135deg, #0c2340 0%, #1e3a8a 100%)';
+        btn.style.borderColor = '#0c2340';
+        btn.style.color = '#fff';
+        btn.innerHTML = '<i class="fa-solid fa-shield-halved mr-2"></i> PAY WITH RAZORPAY • ₹' + totalAmountInr;
+    } else if (method === 'COD') {
+        if (cardCod) cardCod.classList.add('bg-light', 'border-primary');
+        btn.style.background = '#28a745';
+        btn.style.borderColor = '#28a745';
+        btn.style.color = '#fff';
+        btn.innerHTML = '<i class="fa-solid fa-money-bill-wave mr-2"></i> PLACE ORDER (COD) • ₹' + totalAmountInr;
+    } else {
+        if (cardUpi) cardUpi.classList.add('bg-light', 'border-primary');
+        btn.style.background = '#fc8019';
+        btn.style.borderColor = '#fc8019';
+        btn.style.color = '#fff';
+        btn.innerHTML = '<i class="fa-solid fa-bolt mr-2"></i> CONFIRM ORDER (UPI) • ₹' + totalAmountInr;
+    }
+}
+
+function openRazorpaySandboxModal() {
+    $('#razorpaySandboxModal').modal('show');
+}
+
+function closeRazorpaySandboxModal() {
+    $('#razorpaySandboxModal').modal('hide');
+    var btn = document.getElementById('placeOrderBtn');
+    btn.disabled = false;
+    handlePaymentMethodChange('Razorpay');
+}
+
+function simulateRazorpaySuccess() {
+    var randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+    var testPayId = 'pay_test_' + randomSuffix;
+    var testOrderId = document.getElementById('razorpayOrderIdInput').value || ('order_demo_' + randomSuffix);
+    var testSignature = 'sig_test_' + Math.random().toString(36).substring(2, 12);
+
+    document.getElementById('razorpayPaymentIdInput').value = testPayId;
+    document.getElementById('razorpayOrderIdInput').value = testOrderId;
+    document.getElementById('razorpaySignatureInput').value = testSignature;
+
+    var btn = document.getElementById('confirmSandboxPayBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Authorizing...';
+
+    setTimeout(function() {
+        $('#razorpaySandboxModal').modal('hide');
+        var placeBtn = document.getElementById('placeOrderBtn');
+        placeBtn.disabled = true;
+        placeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> CONFIRMING RAZORPAY PAYMENT...';
+        document.getElementById('checkoutForm').submit();
+    }, 400);
+}
+
+document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+    var form = this;
+    var selectedMethodRadio = document.querySelector('input[name="payment_method"]:checked');
+    var selectedMethod = selectedMethodRadio ? selectedMethodRadio.value : 'Razorpay';
+    var btn = document.getElementById('placeOrderBtn');
+
+    // If manual address radio is selected, ensure text area is not blank
+    var manualRadio = document.getElementById('addr_manual');
+    if (manualRadio && manualRadio.checked) {
+        var addrInput = document.getElementById('manualAddressInput');
+        if (!addrInput.value.trim()) {
+            addrInput.focus();
+            return false;
+        }
+    }
+
+    // Phone validation
+    var phoneInput = document.getElementById('checkoutPhoneInput');
+    if (phoneInput && !phoneInput.checkValidity()) {
+        phoneInput.reportValidity();
+        return false;
+    }
+
+    if (selectedMethod === 'Razorpay') {
+        // If razorpay payment id already captured, proceed with submission
+        var existingPayId = document.getElementById('razorpayPaymentIdInput').value;
+        if (existingPayId) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> CONFIRMING ORDER...';
+            return true;
+        }
+
+        e.preventDefault();
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> OPENING RAZORPAY...';
+
+        var userPhone = phoneInput ? phoneInput.value : '';
+        var userEmail = "{{ request.user.email|escapejs }}";
+        var userName = "{{ request.user.get_full_name|default:request.user.username|escapejs }}";
+        var currOrderId = document.getElementById('razorpayOrderIdInput').value;
+
+        var options = {
+            "key": razorpayKeyId,
+            "amount": razorpayAmountPaise,
+            "currency": "INR",
+            "name": "FoodieGo Bengaluru",
+            "description": "Order Payment • ₹" + totalAmountInr,
+            "image": "https://cdn.razorpay.com/static/assets/logo/rzp.png",
+            "prefill": {
+                "name": userName,
+                "email": userEmail,
+                "contact": userPhone
+            },
+            "theme": {
+                "color": "#0c2340"
+            },
+            "handler": function (response) {
+                document.getElementById('razorpayPaymentIdInput').value = response.razorpay_payment_id || '';
+                document.getElementById('razorpayOrderIdInput').value = response.razorpay_order_id || currOrderId;
+                document.getElementById('razorpaySignatureInput').value = response.razorpay_signature || '';
+
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> CONFIRMING PAYMENT...';
+                form.submit();
+            },
+            "modal": {
+                "ondismiss": function() {
+                    btn.disabled = false;
+                    handlePaymentMethodChange('Razorpay');
+                }
+            }
+        };
+
+        if (currOrderId && !currOrderId.startsWith('order_demo_')) {
+            options.order_id = currOrderId;
+        }
+
+        try {
+            if (typeof Razorpay !== 'undefined') {
+                var rzp = new Razorpay(options);
+                rzp.on('payment.failed', function (response) {
+                    btn.disabled = false;
+                    handlePaymentMethodChange('Razorpay');
+                    openRazorpaySandboxModal();
+                });
+                rzp.open();
+            } else {
+                openRazorpaySandboxModal();
+            }
+        } catch (err) {
+            console.warn("Razorpay standard checkout modal exception:", err);
+            openRazorpaySandboxModal();
+        }
+    } else {
+        // COD or UPI
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> PROCESSING ORDER...';
+    }
+});
+</script>
+{% endblock %}

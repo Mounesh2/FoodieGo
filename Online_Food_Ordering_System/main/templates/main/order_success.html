@@ -1,0 +1,92 @@
+{% extends "main/layout.html" %}
+{% load static %}
+
+{% block title %}Order Confirmed #{{ order.order_number }} — FoodieGo{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="order-success-card">
+        <div class="success-icon-wrap">
+            <i class="fa-solid fa-check"></i>
+        </div>
+        <span class="badge badge-success px-3 py-1 font-weight-bold mb-2">Order Confirmed</span>
+        <h2 class="font-weight-extrabold text-dark mb-1">Thank You For Your Order!</h2>
+        <p class="text-muted">The restaurant has received your order and is preparing your meal.</p>
+
+        <div class="p-3 bg-light rounded-lg text-left my-4">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted small">Order Reference:</span>
+                <strong class="text-dark font-monospace" id="orderRefNum">{{ order.order_number }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted small">Delivering to:</span>
+                <span class="text-dark font-weight-bold text-right small">{{ order.delivery_address }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted small">Payment Mode:</span>
+                <span class="text-dark font-weight-bold small">
+                    {{ order.payment_method }}
+                    {% if order.is_paid %}
+                        <span class="badge badge-success font-weight-bold ml-1">PAID</span>
+                    {% endif %}
+                </span>
+            </div>
+            {% if order.razorpay_payment_id %}
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted small"><i class="fa-solid fa-shield-halved text-primary mr-1"></i> Razorpay Reference:</span>
+                <span class="text-dark font-monospace font-weight-bold small">{{ order.razorpay_payment_id }}</span>
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between pt-2 border-top">
+                <span class="font-weight-bold text-dark">Total Amount:</span>
+                <strong class="text-primary font-weight-extrabold font-size-lg">₹{{ order.total_amount|floatformat:2 }}</strong>
+            </div>
+        </div>
+
+        <!-- Order Stepper -->
+        <h6 class="font-weight-bold text-left mb-3 text-dark">Live Order Status</h6>
+        <div class="order-stepper">
+            <div class="step-item active">
+                <div class="step-circle"><i class="fa-solid fa-check"></i></div>
+                <div class="step-label font-weight-bold text-primary">Confirmed</div>
+            </div>
+            <div class="step-item {% if order.status in 'Preparing,Out for Delivery,Delivered' %}active{% endif %}">
+                <div class="step-circle"><i class="fa-solid fa-kitchen-set"></i></div>
+                <div class="step-label">Preparing</div>
+            </div>
+            <div class="step-item {% if order.status in 'Out for Delivery,Delivered' %}active{% endif %}">
+                <div class="step-circle"><i class="fa-solid fa-motorcycle"></i></div>
+                <div class="step-label">On The Way</div>
+            </div>
+            <div class="step-item {% if order.status == 'Delivered' %}active{% endif %}">
+                <div class="step-circle"><i class="fa-solid fa-house-chimney"></i></div>
+                <div class="step-label">Delivered</div>
+            </div>
+        </div>
+
+        <!-- Ordered Items List -->
+        <div class="text-left mb-4">
+            <h6 class="font-weight-bold text-dark mb-2">Items Ordered:</h6>
+            <ul class="list-group list-group-flush border rounded-lg">
+                {% for item in order.cart_items.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                        <span>
+                            <strong class="text-primary">{{ item.quantity }}x</strong> {{ item.item.title }}
+                        </span>
+                        <span class="font-weight-bold">₹{{ item.subtotal|floatformat:0 }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="d-flex justify-content-center" style="gap: 1rem;">
+            <a href="{% url 'main:order_details' %}" class="btn btn-primary font-weight-bold rounded-pill px-4" id="viewOrdersBtn">
+                <i class="fa-solid fa-clock-rotate-left mr-1"></i> Track in Orders
+            </a>
+            <a href="{% url 'main:home' %}" class="btn btn-outline-dark font-weight-bold rounded-pill px-4">
+                Explore More
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

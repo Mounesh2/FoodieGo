@@ -1,0 +1,154 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block title %}Trip Details #{{ order.order_number }} — FoodieGo Delivery{% endblock %}
+
+{% block content %}
+<div class="delivery-portal-wrapper py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container" style="max-width: 850px;">
+        <!-- Header & Breadcrumb -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0 mb-1 small">
+                        <li class="breadcrumb-item"><a href="{% url 'main:delivery_portal_overview' %}">Delivery Hub</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Trip #{{ order.order_number }}</li>
+                    </ol>
+                </nav>
+                <h3 class="font-weight-bold text-dark mb-0">Delivery Trip Details</h3>
+            </div>
+            <a href="{% url 'main:delivery_portal_overview' %}" class="btn btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 8px;">
+                &larr; Back to Hub
+            </a>
+        </div>
+
+        <!-- Trip Status Card -->
+        <div class="card border-0 shadow-sm rounded-lg p-4 mb-4 bg-white" style="border-radius: 16px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <span class="small text-muted d-block">Order Reference</span>
+                    <strong class="text-dark font-monospace" style="font-size: 1.2rem;">#{{ order.order_number }}</strong>
+                </div>
+                <div>
+                    <span class="badge badge-pill 
+                        {% if order.status == 'Ready for Pickup' %}badge-warning text-dark
+                        {% elif order.status == 'Out for Delivery' %}badge-primary
+                        {% elif order.status == 'Delivered' %}badge-success
+                        {% else %}badge-secondary{% endif %} font-weight-bold px-3 py-2" style="font-size: 0.95rem;">
+                        {{ order.status }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Route Info: Step 1 Pickup -> Step 2 Drop -->
+            <div class="row mt-4">
+                <!-- Pickup Point -->
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="p-3 border rounded-lg h-100 bg-light" style="border-radius: 14px;">
+                        <span class="badge badge-warning text-dark font-weight-bold px-2 py-1 mb-2">
+                            <i class="fa-solid fa-store mr-1"></i> STEP 1: PICKUP OUTLET
+                        </span>
+                        <h5 class="font-weight-bold text-dark mb-1">{{ order.restaurant.name }}</h5>
+                        <p class="small text-muted mb-2">
+                            <i class="fa-solid fa-location-dot text-danger mr-1"></i> {{ order.restaurant.address_details|default:order.restaurant.area }}
+                        </p>
+                        {% if order.restaurant.contact_phone %}
+                            <div class="small">
+                                <a href="tel:{{ order.restaurant.contact_phone }}" class="text-primary font-weight-bold">
+                                    <i class="fa-solid fa-phone mr-1"></i> Call Restaurant ({{ order.restaurant.contact_phone }})
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Drop Point -->
+                <div class="col-md-6">
+                    <div class="p-3 border rounded-lg h-100 bg-light" style="border-radius: 14px;">
+                        <span class="badge badge-primary font-weight-bold px-2 py-1 mb-2">
+                            <i class="fa-solid fa-house-chimney mr-1"></i> STEP 2: CUSTOMER DROP
+                        </span>
+                        <h5 class="font-weight-bold text-dark mb-1">{{ order.user.first_name|default:order.user.username }}</h5>
+                        <p class="small text-muted mb-2">
+                            <i class="fa-solid fa-location-dot text-danger mr-1"></i> {{ order.address }}
+                        </p>
+                        {% if order.phone_number %}
+                            <div class="small">
+                                <a href="tel:{{ order.phone_number }}" class="text-success font-weight-bold">
+                                    <i class="fa-solid fa-phone mr-1"></i> Call Customer ({{ order.phone_number }})
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Food Items Summary -->
+            <div class="mt-4 pt-3 border-top">
+                <h6 class="font-weight-bold text-dark mb-2">Order Items to Deliver:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-borderless mb-0">
+                        <tbody>
+                            {% if order.order_items.all %}
+                                {% for oi in order.order_items.all %}
+                                    <tr class="border-bottom">
+                                        <td class="font-weight-bold text-dark">{{ oi.quantity }}x {{ oi.item_title }}</td>
+                                        <td class="text-right text-muted">₹{{ oi.subtotal|floatformat:0 }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                {% for ci in order.cart_items.all %}
+                                    <tr class="border-bottom">
+                                        <td class="font-weight-bold text-dark">{{ ci.quantity }}x {{ ci.item.title }}</td>
+                                        <td class="text-right text-muted">₹{{ ci.sub_total|floatformat:0 }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2 small font-weight-bold">
+                    <span>Payment Mode: {{ order.payment_method }}</span>
+                    <span>Order Total: ₹{{ order.total_amount|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <!-- Rider Actions Execution -->
+            <div class="mt-4 pt-3 border-top">
+                {% if not order.assigned_delivery_partner %}
+                    <form action="{% url 'main:delivery_claim_order' order.order_number %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-warning btn-lg btn-block font-weight-bold text-dark py-3" style="border-radius: 12px;">
+                            <i class="fa-solid fa-hand-holding-hand mr-2"></i> Accept & Claim This Delivery
+                        </button>
+                    </form>
+                {% elif is_assigned_to_me %}
+                    {% if order.status != 'Out for Delivery' and order.status != 'Delivered' %}
+                        <form action="{% url 'main:delivery_confirm_pickup' order.order_number %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-lg btn-block font-weight-bold py-3" style="border-radius: 12px;">
+                                <i class="fa-solid fa-box mr-2"></i> Confirm Food Picked Up from Kitchen (Start Delivery)
+                            </button>
+                        </form>
+                    {% elif order.status == 'Out for Delivery' %}
+                        <form action="{% url 'main:delivery_confirm_delivered' order.order_number %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-lg btn-block font-weight-bold py-3" style="border-radius: 12px;">
+                                <i class="fa-solid fa-circle-check mr-2"></i> Confirm Order Delivered to Customer
+                            </button>
+                        </form>
+                    {% elif order.status == 'Delivered' %}
+                        <div class="alert alert-success p-3 text-center font-weight-bold mb-0" style="border-radius: 12px;">
+                            <i class="fa-solid fa-circle-check mr-1"></i> Delivery Successfully Completed on {{ order.delivery_date|date:"M d, Y h:i A" }}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-secondary text-center small mb-0">
+                        This order is assigned to rider: {{ order.assigned_delivery_partner.username }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

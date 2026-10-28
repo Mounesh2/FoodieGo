@@ -1,0 +1,187 @@
+{% extends "main/layout.html" %}
+{% load static %}
+
+{% block title %}My Orders & History — FoodieGo Bengaluru{% endblock %}
+
+{% block content %}
+<div class="py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container" style="max-width: 1000px;">
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+            <div>
+                <h3 class="font-weight-bold text-dark mb-1">
+                    <i class="fa-solid fa-clock-rotate-left text-warning mr-2"></i> My Orders & Delivery History
+                </h3>
+                <p class="text-muted small mb-0">Track real-time status of active meals, view past receipts, or reorder favorite dishes.</p>
+            </div>
+            <a href="{% url 'main:home' %}" class="btn btn-warning font-weight-bold text-dark px-4 py-2 mt-2 mt-sm-0" style="border-radius: 10px;">
+                <i class="fa-solid fa-utensils mr-1"></i> Order Food
+            </a>
+        </div>
+
+        <!-- Section 1: Active Live Kitchen & Delivery Orders -->
+        <div class="mb-5">
+            <h5 class="font-weight-bold text-dark mb-3 d-flex align-items-center">
+                <span class="badge badge-warning text-dark mr-2 px-3 py-1 font-weight-bold">Live Tracking</span>
+                <span>Active Orders ({{ active_orders.count }})</span>
+            </h5>
+
+            {% if active_orders %}
+                <div class="row">
+                    {% for ord in active_orders %}
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="border-radius: 16px;">
+                                <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="small text-muted d-block">Order #</span>
+                                        <strong class="text-dark font-monospace" style="font-size: 1.05rem;">{{ ord.order_number }}</strong>
+                                    </div>
+                                    <span class="badge badge-pill badge-warning text-dark font-weight-bold px-3 py-2">
+                                        <i class="fa-solid fa-spinner fa-spin mr-1"></i> {{ ord.status }}
+                                    </span>
+                                </div>
+                                <div class="card-body p-3 d-flex flex-column">
+                                    <div class="small text-muted mb-2">
+                                        <i class="fa-regular fa-clock mr-1"></i> Placed {{ ord.created_at|date:"M d, Y h:i A" }}
+                                    </div>
+                                    <div class="mb-3">
+                                        <h6 class="font-weight-bold text-dark mb-0">{{ ord.restaurant.name }}</h6>
+                                        <span class="small text-muted">{{ ord.restaurant.area }} • {{ ord.restaurant.cuisine }}</span>
+                                    </div>
+
+                                    <!-- Ordered Items Snapshot -->
+                                    <div class="p-2 bg-light rounded mb-3 small" style="border-radius: 10px;">
+                                        {% if ord.order_items.all %}
+                                            {% for oi in ord.order_items.all %}
+                                                <div class="d-flex justify-content-between py-1">
+                                                    <span><strong>{{ oi.quantity }}x</strong> {{ oi.item_title }}</span>
+                                                    <span>₹{{ oi.subtotal|floatformat:0 }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            {% for ci in ord.cart_items.all %}
+                                                <div class="d-flex justify-content-between py-1">
+                                                    <span><strong>{{ ci.quantity }}x</strong> {{ ci.item.title }}</span>
+                                                    <span>₹{{ ci.sub_total|floatformat:0 }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="small text-muted mb-3">
+                                        <i class="fa-solid fa-location-dot text-danger mr-1"></i> {{ ord.address|truncatechars:65 }}
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
+                                        <div>
+                                            <span class="text-muted small d-block">Bill Total ({{ ord.payment_method }}):</span>
+                                            <strong class="text-dark h5 mb-0 font-weight-bold">₹{{ ord.total_amount|floatformat:2 }}</strong>
+                                        </div>
+                                        <div class="d-flex">
+                                            <a href="{% url 'main:order_tracking' ord.order_number %}" class="btn btn-warning font-weight-bold text-dark px-3 py-1 shadow-sm mr-2" style="border-radius: 8px;">
+                                                <i class="fa-solid fa-timeline mr-1"></i> Track Live
+                                            </a>
+                                            {% if ord.can_be_cancelled %}
+                                                <form action="{% url 'main:cancel_order' ord.order_number %}" method="post" onsubmit="return confirm('Cancel Order #{{ ord.order_number }}?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm font-weight-bold px-2 py-1" style="border-radius: 8px;">
+                                                        Cancel
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card border-0 shadow-sm rounded-lg p-4 text-center text-muted bg-white" style="border-radius: 16px;">
+                    <div class="mb-2" style="font-size: 2rem;">🍽️</div>
+                    <h6 class="font-weight-bold text-dark mb-1">No Active Orders Right Now</h6>
+                    <p class="small text-muted mb-0">Hungry? Explore Bengaluru's top restaurants and order your favorite meal.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Section 2: Completed / Past Orders -->
+        <div>
+            <h5 class="font-weight-bold text-dark mb-3 d-flex align-items-center">
+                <span class="badge badge-secondary mr-2 px-3 py-1 font-weight-bold">History</span>
+                <span>Past & Delivered Orders ({{ completed_orders.count }})</span>
+            </h5>
+
+            {% if completed_orders %}
+                <div class="row">
+                    {% for ord in completed_orders %}
+                        <div class="col-lg-6 mb-4">
+                            <div class="card border-0 shadow-sm rounded-lg overflow-hidden h-100" style="border-radius: 16px;">
+                                <div class="card-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="small text-muted d-block">Order #</span>
+                                        <strong class="text-dark font-monospace">{{ ord.order_number }}</strong>
+                                    </div>
+                                    <span class="badge badge-pill {% if ord.status == 'Delivered' %}badge-success{% else %}badge-danger{% endif %} font-weight-bold px-3 py-2">
+                                        {% if ord.status == 'Delivered' %}
+                                            <i class="fa-solid fa-circle-check mr-1"></i> Delivered
+                                        {% else %}
+                                            <i class="fa-solid fa-circle-xmark mr-1"></i> {{ ord.status }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="card-body p-3 d-flex flex-column">
+                                    <div class="small text-muted mb-2">
+                                        <i class="fa-regular fa-calendar-check mr-1"></i> {{ ord.created_at|date:"M d, Y h:i A" }}
+                                    </div>
+                                    <div class="mb-2">
+                                        <h6 class="font-weight-bold text-dark mb-0">{{ ord.restaurant.name }}</h6>
+                                        <span class="small text-muted">{{ ord.restaurant.area }}</span>
+                                    </div>
+
+                                    <!-- Ordered Items Snapshot -->
+                                    <div class="p-2 bg-light rounded mb-3 small" style="border-radius: 10px;">
+                                        {% if ord.order_items.all %}
+                                            {% for oi in ord.order_items.all %}
+                                                <div class="d-flex justify-content-between py-1">
+                                                    <span>{{ oi.quantity }}x {{ oi.item_title }}</span>
+                                                    <span>₹{{ oi.subtotal|floatformat:0 }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            {% for ci in ord.cart_items.all %}
+                                                <div class="d-flex justify-content-between py-1">
+                                                    <span>{{ ci.quantity }}x {{ ci.item.title }}</span>
+                                                    <span>₹{{ ci.sub_total|floatformat:0 }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top mt-auto">
+                                        <div>
+                                            <span class="text-muted small d-block">Total Paid:</span>
+                                            <strong class="text-dark font-weight-bold">₹{{ ord.total_amount|floatformat:2 }}</strong>
+                                        </div>
+                                        <div class="d-flex">
+                                            <a href="{% url 'main:order_tracking' ord.order_number %}" class="btn btn-sm btn-outline-secondary font-weight-bold mr-2" style="border-radius: 8px;">
+                                                Receipt
+                                            </a>
+                                            <a href="{% url 'main:reorder_order' ord.order_number %}" class="btn btn-sm btn-outline-warning font-weight-bold text-dark" style="border-radius: 8px;">
+                                                <i class="fa-solid fa-rotate-right mr-1"></i> Reorder
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="card border-0 shadow-sm rounded-lg p-4 text-center text-muted bg-white" style="border-radius: 16px;">
+                    <p class="mb-0">No past orders in your history yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

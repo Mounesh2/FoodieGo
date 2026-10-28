@@ -1,0 +1,1172 @@
+/* ==========================================================================
+   FoodieGo 2.0 — Modern Bengaluru Food Delivery Design System
+   Inspired by Swiggy — High Performance, Responsive, Clean Aesthetics
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #fc8019;
+  --primary-hover: #e06c07;
+  --primary-light: #fff5ed;
+  --secondary: #10b981;
+  --secondary-light: #ecfdf5;
+  --danger: #ef4444;
+  --danger-light: #fef2f2;
+  --dark: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-300: #cbd5e1;
+  --slate-100: #f1f5f9;
+  --bg-page: #f8fafc;
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 8px 20px -4px rgba(15, 23, 42, 0.08), 0 4px 8px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 20px 30px -8px rgba(15, 23, 42, 0.12), 0 8px 12px -4px rgba(15, 23, 42, 0.05);
+  --transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--dark);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* -------------------------------------------------------------
+   Navbar & Header
+   ------------------------------------------------------------- */
+.foodiego-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 0.75rem 0;
+  transition: var(--transition);
+}
+
+.foodiego-navbar .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+.brand-logo .logo-icon {
+  font-size: 1.7rem;
+  animation: flameBounce 2s infinite ease-in-out;
+}
+
+@keyframes flameBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.brand-logo span.version-tag {
+  background: linear-gradient(135deg, #fc8019, #ff5200);
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.bengaluru-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--slate-100);
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate-700);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  list-style: none;
+}
+
+.nav-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.95rem;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--slate-700);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.nav-link-btn:hover {
+  background: var(--slate-100);
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.nav-link-btn.cart-btn {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(252, 128, 25, 0.3);
+}
+
+.nav-link-btn.cart-btn:hover {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.cart-count-badge {
+  background: #ffffff;
+  color: var(--primary);
+  font-size: 0.75rem;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  font-weight: 800;
+}
+
+.nav-link-btn.api-docs-btn {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.nav-link-btn.api-docs-btn:hover {
+  background: #0369a1;
+  color: #ffffff;
+}
+
+/* -------------------------------------------------------------
+   Hero Banner
+   ------------------------------------------------------------- */
+.hero-section {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  padding: 3rem 0 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(252, 128, 25, 0.25) 0%, rgba(252, 128, 25, 0) 70%);
+  border-radius: 50%;
+}
+
+.hero-title {
+  font-size: 2.35rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+}
+
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: #cbd5e1;
+  margin-bottom: 1.75rem;
+}
+
+.hero-search-bar {
+  display: flex;
+  background: #ffffff;
+  border-radius: var(--radius-full);
+  padding: 0.35rem;
+  box-shadow: var(--shadow-lg);
+  max-width: 650px;
+}
+
+.hero-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+}
+
+.hero-search-btn {
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1.75rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.hero-search-btn:hover {
+  background: var(--primary-hover);
+}
+
+/* Demo Notice Banner */
+.demo-dataset-banner {
+  background: rgba(252, 128, 25, 0.12);
+  border-left: 4px solid var(--primary);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: #fed7aa;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* -------------------------------------------------------------
+   Cuisines Chips Carousel
+   ------------------------------------------------------------- */
+.cuisine-strip {
+  padding: 1.5rem 0;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cuisine-scroll-container {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.cuisine-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.15rem;
+  background: var(--slate-100);
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--slate-700);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: var(--transition);
+  border: 1px solid transparent;
+}
+
+.cuisine-chip:hover,
+.cuisine-chip.active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+/* -------------------------------------------------------------
+   Filters & Controls Bar
+   ------------------------------------------------------------- */
+.controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 2rem 0 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--slate-700);
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+  background: var(--dark);
+  color: #ffffff;
+  border-color: var(--dark);
+  text-decoration: none;
+}
+
+.filter-btn.veg-toggle.active {
+  background: var(--secondary);
+  border-color: var(--secondary);
+  color: #fff;
+}
+
+/* -------------------------------------------------------------
+   Restaurant Cards Grid
+   ------------------------------------------------------------- */
+.restaurants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.75rem;
+  margin-bottom: 3rem;
+}
+
+.restaurant-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  text-decoration: none;
+  color: inherit;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.restaurant-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(252, 128, 25, 0.4);
+  text-decoration: none;
+  color: inherit;
+}
+
+.card-image-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background-color: var(--slate-100);
+  overflow: hidden;
+}
+
+.card-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.restaurant-card:hover .card-image-wrap img {
+  transform: scale(1.05);
+}
+
+.badge-delivery-time {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.badge-offer-ribbon {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: linear-gradient(135deg, #fc8019, #e06c07);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.card-body {
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.card-name-rating {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.restaurant-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1.3;
+}
+
+.rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #047857;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.cuisine-text {
+  font-size: 0.88rem;
+  color: var(--slate-600);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.area-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--slate-500);
+  margin-top: auto;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+/* -------------------------------------------------------------
+   Restaurant Detail Page
+   ------------------------------------------------------------- */
+.restaurant-hero {
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 2.5rem 0 2rem;
+  margin-bottom: 2rem;
+}
+
+.rest-hero-inner {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rest-hero-img {
+  width: 220px;
+  height: 160px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  box-shadow: var(--shadow-md);
+}
+
+.rest-hero-info {
+  flex: 1;
+  min-width: 280px;
+}
+
+.rest-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--dark);
+  margin-bottom: 0.4rem;
+}
+
+.rest-meta-pills {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.rest-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--slate-700);
+  background: var(--slate-100);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-full);
+}
+
+/* Menu Category Tabs & Items */
+.menu-category-section {
+  margin-bottom: 3rem;
+}
+
+.category-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--slate-100);
+  color: var(--slate-800);
+}
+
+.dishes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dish-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  background: #ffffff;
+  padding: 1.25rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.dish-item-row:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(252, 128, 25, 0.3);
+}
+
+.dish-info {
+  flex: 1;
+}
+
+.dish-veg-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--secondary);
+  border-radius: 3px;
+  margin-bottom: 0.35rem;
+}
+
+.dish-veg-badge .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--secondary);
+  border-radius: 50%;
+}
+
+.dish-nonveg-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--danger);
+  border-radius: 3px;
+  margin-bottom: 0.35rem;
+}
+
+.dish-nonveg-badge .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--danger);
+  border-radius: 50%;
+}
+
+.dish-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--dark);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 0.25rem;
+}
+
+.dish-name:hover {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.dish-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--slate-800);
+  margin-bottom: 0.35rem;
+}
+
+.dish-description {
+  font-size: 0.88rem;
+  color: var(--slate-500);
+  line-height: 1.4;
+  max-width: 600px;
+}
+
+.dish-media-action {
+  position: relative;
+  width: 130px;
+  height: 110px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dish-thumb {
+  width: 100%;
+  height: 90px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+}
+
+.btn-add-cart {
+  position: absolute;
+  bottom: 0;
+  background: #ffffff;
+  color: var(--secondary);
+  border: 1px solid var(--border-color);
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 0.4rem 1.4rem;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+  text-transform: uppercase;
+}
+
+.btn-add-cart:hover {
+  background: var(--secondary-light);
+  color: var(--secondary);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+/* -------------------------------------------------------------
+   Cart & Checkout Pages
+   ------------------------------------------------------------- */
+.cart-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 2rem;
+  margin: 2.5rem 0 4rem;
+}
+
+@media (max-width: 900px) {
+  .cart-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cart-items-panel,
+.bill-panel {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.cart-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cart-item-card:last-child {
+  border-bottom: none;
+}
+
+.qty-counter {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.qty-btn {
+  background: transparent;
+  border: none;
+  padding: 0.35rem 0.65rem;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.qty-btn:hover {
+  background: var(--primary-light);
+}
+
+.qty-number {
+  padding: 0.35rem 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 28px;
+  text-align: center;
+}
+
+.bill-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--slate-600);
+}
+
+.bill-row.total-row {
+  border-top: 2px dashed var(--border-color);
+  padding-top: 1rem;
+  margin-top: 1rem;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.btn-checkout {
+  display: block;
+  width: 100%;
+  background: var(--primary);
+  color: #ffffff;
+  text-align: center;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  font-size: 1.05rem;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(252, 128, 25, 0.35);
+  margin-top: 1.5rem;
+  transition: var(--transition);
+}
+
+.btn-checkout:hover {
+  background: var(--primary-hover);
+  color: #fff;
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+/* -------------------------------------------------------------
+   Order Success & Stepper
+   ------------------------------------------------------------- */
+.order-success-card {
+  max-width: 650px;
+  margin: 3rem auto;
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.success-icon-wrap {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 1.25rem;
+  background: var(--secondary-light);
+  color: var(--secondary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+}
+
+.order-stepper {
+  display: flex;
+  justify-content: space-between;
+  margin: 2rem 0;
+  position: relative;
+}
+
+.order-stepper::before {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  right: 20px;
+  height: 3px;
+  background: var(--slate-300);
+  z-index: 1;
+}
+
+.step-item {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--slate-300);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0 auto 0.4rem;
+}
+
+.step-item.active .step-circle {
+  background: var(--primary);
+}
+
+.step-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--slate-600);
+}
+
+/* -------------------------------------------------------------
+   Admin Dashboard
+   ------------------------------------------------------------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
+  margin: 2rem 0;
+}
+
+.stat-card {
+  background: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary);
+}
+
+.stat-card.stat-green {
+  border-left-color: var(--secondary);
+}
+
+.stat-card.stat-blue {
+  border-left-color: #0284c7;
+}
+
+.stat-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate-500);
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+
+.stat-number {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+/* -------------------------------------------------------------
+   Footer
+   ------------------------------------------------------------- */
+.foodiego-footer {
+  background: var(--dark);
+  color: #94a3b8;
+  padding: 3rem 0 2rem;
+  margin-top: 5rem;
+  font-size: 0.9rem;
+}
+
+.foodiego-footer a {
+  color: #cbd5e1;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.foodiego-footer a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+/* -------------------------------------------------------------
+   Swiggy-inspired Circular Food Category Carousel
+   ------------------------------------------------------------- */
+.food-category-carousel {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 0.5rem 0 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--slate-300) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.food-category-carousel::-webkit-scrollbar {
+  height: 6px;
+}
+
+.food-category-carousel::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: var(--radius-full);
+}
+
+.category-card-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none !important;
+  color: var(--slate-700);
+  transition: var(--transition);
+  flex-shrink: 0;
+  width: 95px;
+}
+
+.category-card-item:hover {
+  transform: translateY(-4px);
+  color: var(--primary);
+}
+
+.category-img-circle {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  border: 3px solid #ffffff;
+  background: var(--slate-100);
+  transition: var(--transition);
+}
+
+.category-card-item:hover .category-img-circle {
+  border-color: var(--primary);
+  box-shadow: 0 6px 16px rgba(252, 128, 25, 0.3);
+}
+
+.category-img-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.category-card-item:hover .category-img-circle img {
+  transform: scale(1.08);
+}
+
+.category-title-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* -------------------------------------------------------------
+   Dish Dynamic Quantity Control [- qty +]
+   ------------------------------------------------------------- */
+.dish-qty-control {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid var(--secondary);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  overflow: hidden;
+  height: 34px;
+  width: 95px;
+  z-index: 2;
+}
+
+.dish-qty-control .qty-btn {
+  background: none;
+  border: none;
+  color: var(--secondary);
+  font-weight: 800;
+  font-size: 0.85rem;
+  width: 30px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dish-qty-control .qty-btn:hover {
+  background: var(--secondary-light);
+  color: var(--secondary);
+}
+
+.dish-qty-control .qty-count {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--secondary);
+  flex: 1;
+  text-align: center;
+}
+
+/* -------------------------------------------------------------
+   Visual Excellence & Responsive Layout Enhancements
+   ------------------------------------------------------------- */
+@media (max-width: 992px) {
+  .rest-hero-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rest-hero-img {
+    width: 100%;
+    height: 220px;
+  }
+
+  .controls-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 1.85rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .restaurants-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .dish-item-row {
+    flex-direction: row;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .dish-media-action {
+    width: 110px;
+    height: 100px;
+  }
+
+  .dish-thumb {
+    height: 80px;
+  }
+
+  .dish-qty-control {
+    width: 85px;
+    height: 30px;
+  }
+
+  .btn-add-cart {
+    padding: 0.35rem 1rem;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .foodiego-navbar {
+    padding: 0.5rem 0;
+  }
+
+  .brand-logo {
+    font-size: 1.2rem;
+  }
+
+  .nav-link-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .hero-search-bar {
+    flex-direction: column;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+  }
+
+  .hero-search-input {
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 0.85rem 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-search-btn {
+    border-radius: var(--radius-md);
+    padding: 0.85rem;
+    justify-content: center;
+  }
+
+  .restaurants-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dish-item-row {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .dish-media-action {
+    align-self: flex-end;
+    margin-bottom: 0.5rem;
+  }
+
+  .cart-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}

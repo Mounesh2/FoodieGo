@@ -1,0 +1,134 @@
+{% extends "main/layout.html" %}
+{% load static %}
+
+{% block title %}{{ item.title }} — FoodieGo 2.0{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-transparent px-0 py-1 small">
+            <li class="breadcrumb-item"><a href="{% url 'main:home' %}">Home</a></li>
+            {% if item.restaurant %}
+                <li class="breadcrumb-item"><a href="{% url 'main:restaurant_detail' item.restaurant.slug %}">{{ item.restaurant.name }}</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active" aria-current="page">{{ item.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="card border-0 shadow-sm rounded-lg overflow-hidden mb-5">
+        <div class="row no-gutters">
+            <div class="col-md-6 bg-light d-flex align-items-center justify-content-center p-3">
+                <img src="{{ item.get_display_image }}" 
+                     onerror="this.onerror=null; this.src='{% static 'images/fallback_food.svg' %}';"
+                     alt="{{ item.title }}" 
+                     class="img-fluid rounded-lg shadow-sm"
+                     style="max-height: 420px; width: 100%; object-fit: cover;">
+            </div>
+            <div class="col-md-6 p-4 p-lg-5 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2" style="gap: 0.6rem;">
+                        {% if item.is_veg %}
+                            <span class="badge badge-success px-2 py-1"><i class="fa-solid fa-leaf mr-1"></i> Pure Veg</span>
+                        {% else %}
+                            <span class="badge badge-danger px-2 py-1">● Non-Veg</span>
+                        {% endif %}
+                        <span class="badge badge-secondary px-2 py-1">{{ item.category }}</span>
+                        {% if item.labels %}
+                            <span class="badge badge-pill badge-warning text-dark px-2 py-1">{{ item.labels }}</span>
+                        {% endif %}
+                    </div>
+
+                    <h1 class="font-weight-extrabold text-dark mb-2">{{ item.title }}</h1>
+                    
+                    {% if item.restaurant %}
+                        <p class="text-muted mb-3 font-weight-medium">
+                            Prepared by: <a href="{% url 'main:restaurant_detail' item.restaurant.slug %}" class="text-primary font-weight-bold">{{ item.restaurant.name }}</a>
+                            ({{ item.restaurant.area }}, Bengaluru)
+                        </p>
+                    {% endif %}
+
+                    <div class="d-flex align-items-baseline mb-3" style="gap: 0.75rem;">
+                        <span class="h2 font-weight-extrabold text-primary mb-0">₹{{ item.price|floatformat:0 }}</span>
+                        {% if item.discount_percent > 0 %}
+                            <span class="badge badge-success px-2 py-1 font-weight-bold">{{ item.discount_percent }}% OFF</span>
+                        {% endif %}
+                        <span class="text-muted small">({{ item.pieces }} serving{% if item.pieces > 1 %}s{% endif %})</span>
+                    </div>
+
+                    <p class="text-muted mb-4 lead" style="font-size: 1rem;">{{ item.description }}</p>
+
+                    <div class="p-3 bg-light rounded-lg mb-4 small text-muted">
+                        <i class="fa-solid fa-clock-rotate-left text-warning mr-1"></i>
+                        <span>Average delivery time: <strong>30-45 mins</strong> across Bengaluru.</span>
+                    </div>
+                </div>
+
+                <div>
+                    <a href="{% url 'main:add-to-cart' item.slug %}" class="btn btn-primary btn-lg font-weight-bold rounded-pill px-5 shadow-sm" id="dishAddToCartBtn">
+                        <i class="fa-solid fa-bag-shopping mr-2"></i> Add to Cart — ₹{{ item.price|floatformat:0 }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews & Ratings Section -->
+    <div class="card border-0 shadow-sm rounded-lg p-4 p-md-5 mb-5">
+        <h3 class="font-weight-extrabold text-dark mb-4">Customer Reviews & Ratings</h3>
+
+        <!-- Add Review Form -->
+        {% if user.is_authenticated %}
+            <form action="{% url 'main:add_reviews' %}" method="post" class="mb-5 p-3 bg-light rounded-lg">
+                {% csrf_token %}
+                <input type="hidden" name="rslug" value="{{ item.slug }}">
+                <h6 class="font-weight-bold text-dark mb-2">Leave your rating for {{ item.title }}</h6>
+                <div class="form-row align-items-center">
+                    <div class="col-md-2 mb-2">
+                        <select name="rating" class="form-control" required>
+                            <option value="5">★★★★★ (5)</option>
+                            <option value="4">★★★★☆ (4)</option>
+                            <option value="3">★★★☆☆ (3)</option>
+                            <option value="2">★★☆☆☆ (2)</option>
+                            <option value="1">★☆☆☆☆ (1)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8 mb-2">
+                        <input type="text" name="review" class="form-control" placeholder="Share your thoughts on taste, portion, and delivery..." required>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <button type="submit" class="btn btn-dark btn-block font-weight-bold">
+                            Post Review
+                        </button>
+                    </div>
+                </div>
+            </form>
+        {% else %}
+            <div class="alert alert-light border mb-4 text-center">
+                <a href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}" class="font-weight-bold text-primary">Sign in</a> to leave a customer review.
+            </div>
+        {% endif %}
+
+        <!-- Reviews List -->
+        {% if reviews %}
+            <div class="row">
+                {% for rev in reviews %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card border rounded-lg p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong class="text-dark"><i class="fa-regular fa-user mr-1 text-muted"></i> {{ rev.user.username }}</strong>
+                                <span class="badge badge-success">
+                                    <i class="fa-solid fa-star"></i> {{ rev.rating }}
+                                </span>
+                            </div>
+                            <p class="text-muted small mb-2">{{ rev.review }}</p>
+                            <div class="small text-muted text-right font-italic">{{ rev.posted_on }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted mb-0">No reviews yet for this dish. Be the first to try it and share your feedback!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,206 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block title %}User & Restaurant Management — FoodieGo Admin{% endblock %}
+
+{% block content %}
+<div class="admin-portal-wrapper py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container">
+        <!-- Sub-Nav & Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0 mb-1 small">
+                        <li class="breadcrumb-item"><a href="{% url 'main:admin_portal_overview' %}">Admin Hub</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Users & Restaurants</li>
+                    </ol>
+                </nav>
+                <h3 class="font-weight-bold text-dark mb-0">
+                    <i class="fa-solid fa-users-gear text-primary mr-2"></i> User & Restaurant Management
+                </h3>
+                <p class="small text-muted mb-0">Assign user roles (Customer, Chef, Rider, Admin) and control restaurant approvals.</p>
+            </div>
+            <a href="{% url 'main:admin_portal_overview' %}" class="btn btn-outline-secondary font-weight-bold px-3 py-2" style="border-radius: 8px;">
+                &larr; Admin Overview
+            </a>
+        </div>
+
+        <div class="row">
+            <!-- Section 1: User & Staff Role Management -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm rounded-lg p-4 bg-white h-100" style="border-radius: 16px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold text-dark mb-0">
+                            <i class="fa-solid fa-user-shield text-primary mr-2"></i> User Roles & Access
+                        </h5>
+                    </div>
+
+                    <!-- User Search Form -->
+                    <form action="{% url 'main:admin_portal_management' %}" method="get" class="mb-3">
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="u_q" value="{{ user_search }}" class="form-control" placeholder="Search by username or email...">
+                            <select name="role" class="form-control" style="max-width: 130px;">
+                                <option value="">All Roles</option>
+                                <option value="CUSTOMER" {% if role_filter == 'CUSTOMER' %}selected{% endif %}>Customer</option>
+                                <option value="RESTAURANT" {% if role_filter == 'RESTAURANT' %}selected{% endif %}>Restaurant</option>
+                                <option value="DELIVERY" {% if role_filter == 'DELIVERY' %}selected{% endif %}>Delivery</option>
+                                <option value="ADMIN" {% if role_filter == 'ADMIN' %}selected{% endif %}>Admin</option>
+                            </select>
+                            <div class="input-group-append">
+                                <button class="btn btn-dark" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Users Table -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                            <thead class="bg-light small text-muted text-uppercase">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Linked Outlet</th>
+                                    <th class="text-right">Change Role</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in users %}
+                                    <tr>
+                                        <td>
+                                            <div class="font-weight-bold text-dark">{{ u.username }}</div>
+                                            <small class="text-muted">{{ u.email|default:"no email" }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-pill 
+                                                {% if u.profile.role == 'ADMIN' or u.is_superuser %}badge-dark
+                                                {% elif u.profile.role == 'RESTAURANT' %}badge-warning text-dark
+                                                {% elif u.profile.role == 'DELIVERY' %}badge-info
+                                                {% else %}badge-light border text-muted{% endif %} font-weight-bold px-2 py-1">
+                                                {{ u.profile.role|default:"CUSTOMER" }}
+                                            </span>
+                                        </td>
+                                        <td class="small text-muted">
+                                            {{ u.profile.restaurant.name|default:"—"|truncatechars:18 }}
+                                        </td>
+                                        <td class="text-right">
+                                            <button class="btn btn-xs btn-outline-primary font-weight-bold py-1 px-2" data-toggle="modal" data-target="#roleModal_{{ u.id }}">
+                                                Edit
+                                            </button>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Role Edit Modal -->
+                                    <div class="modal fade" id="roleModal_{{ u.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered" role="document">
+                                            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                                                <div class="modal-header bg-dark text-white">
+                                                    <h6 class="modal-title font-weight-bold">Update Permissions: {{ u.username }}</h6>
+                                                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                                                </div>
+                                                <form action="{% url 'main:admin_change_user_role' u.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body p-4">
+                                                        <div class="form-group">
+                                                            <label class="small font-weight-bold text-muted mb-1">Assign User Role *</label>
+                                                            <select name="role" class="form-control" id="roleSelect_{{ u.id }}">
+                                                                <option value="CUSTOMER" {% if u.profile.role == 'CUSTOMER' %}selected{% endif %}>Customer (Standard Ordering)</option>
+                                                                <option value="RESTAURANT" {% if u.profile.role == 'RESTAURANT' %}selected{% endif %}>Restaurant Kitchen Staff</option>
+                                                                <option value="DELIVERY" {% if u.profile.role == 'DELIVERY' %}selected{% endif %}>Delivery Partner (Rider)</option>
+                                                                <option value="ADMIN" {% if u.profile.role == 'ADMIN' %}selected{% endif %}>Platform Administrator</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group" id="restaurantLink_{{ u.id }}">
+                                                            <label class="small font-weight-bold text-muted mb-1">Assign Restaurant (For Kitchen Staff)</label>
+                                                            <select name="restaurant_id" class="form-control">
+                                                                <option value="">-- No restaurant linked --</option>
+                                                                {% for r in all_restaurants %}
+                                                                    <option value="{{ r.id }}" {% if u.profile.restaurant_id == r.id %}selected{% endif %}>{{ r.name }} ({{ r.area }})</option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-0 p-3">
+                                                        <button type="button" class="btn btn-secondary font-weight-bold" data-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-primary font-weight-bold px-4">Update Permissions</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Restaurant Listing Approvals & Suspension -->
+            <div class="col-lg-6 mb-4">
+                <div class="card border-0 shadow-sm rounded-lg p-4 bg-white h-100" style="border-radius: 16px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="font-weight-bold text-dark mb-0">
+                            <i class="fa-solid fa-store text-success mr-2"></i> Restaurant Approvals & Status
+                        </h5>
+                    </div>
+
+                    <!-- Restaurant Search Form -->
+                    <form action="{% url 'main:admin_portal_management' %}" method="get" class="mb-3">
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="r_q" value="{{ rest_search }}" class="form-control" placeholder="Search restaurant name or locality...">
+                            <div class="input-group-append">
+                                <button class="btn btn-dark" type="submit"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Restaurant List -->
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                            <thead class="bg-light small text-muted text-uppercase">
+                                <tr>
+                                    <th>Restaurant</th>
+                                    <th>Area</th>
+                                    <th>Listing Status</th>
+                                    <th class="text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in restaurants %}
+                                    <tr>
+                                        <td>
+                                            <div class="font-weight-bold text-dark">{{ r.name }}</div>
+                                            <small class="text-muted">{{ r.cuisine }} • ⭐ {{ r.rating }}</small>
+                                        </td>
+                                        <td class="small text-muted">{{ r.area }}</td>
+                                        <td>
+                                            {% if r.is_approved %}
+                                                <span class="badge badge-success px-2 py-1 font-weight-bold">Approved</span>
+                                            {% else %}
+                                                <span class="badge badge-danger px-2 py-1 font-weight-bold">Suspended</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-right">
+                                            <form action="{% url 'main:admin_toggle_restaurant_approval' r.id %}" method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                {% if r.is_approved %}
+                                                    <button type="submit" class="btn btn-xs btn-outline-danger font-weight-bold py-1 px-2">
+                                                        Suspend
+                                                    </button>
+                                                {% else %}
+                                                    <button type="submit" class="btn btn-xs btn-outline-success font-weight-bold py-1 px-2">
+                                                        Approve
+                                                    </button>
+                                                {% endif %}
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

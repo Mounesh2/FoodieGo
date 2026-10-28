@@ -1,0 +1,318 @@
+{% extends "main/layout.html" %}
+{% load static %}
+
+{% block title %}FoodieGo — Bengaluru's Favorite Food Delivery{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <span class="badge badge-pill badge-warning text-dark font-weight-bold px-3 py-1 mb-3">
+                    <i class="fa-solid fa-motorcycle mr-1"></i> Lightning Delivery Across Bengaluru
+                </span>
+                <h1 class="hero-title">Hungry in Bengaluru? <br>Order from Top Rated Restaurants</h1>
+                <p class="hero-subtitle">Authentic dosas, aromatic biryanis, gourmet burgers, and quick bites delivered hot & fresh.</p>
+
+                <!-- Search Bar -->
+                <form action="{% url 'main:home' %}" method="get" class="hero-search-bar" id="searchForm">
+                    <input type="text" name="q" value="{{ query }}" placeholder="Search for restaurants, cuisines (e.g. Biryani, Dosa), or areas..." class="hero-search-input" id="mainSearchInput">
+                    {% if selected_area %}<input type="hidden" name="area" value="{{ selected_area }}">{% endif %}
+                    {% if selected_cuisine %}<input type="hidden" name="cuisine" value="{{ selected_cuisine }}">{% endif %}
+                    {% if veg_only %}<input type="hidden" name="veg" value="true">{% endif %}
+                    <button type="submit" class="hero-search-btn" id="searchSubmitBtn">
+                        <i class="fa-solid fa-magnifying-glass mr-1"></i> Search
+                    </button>
+                </form>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block text-center">
+                <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80" 
+                     onerror="this.src='{% static 'images/fallback_food.svg' %}'"
+                     alt="FoodieGo Bengaluru" 
+                     class="img-fluid rounded-circle shadow-lg"
+                     style="width: 280px; height: 280px; object-fit: cover; border: 6px solid rgba(255,255,255,0.15);">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Swiggy-inspired Circular Food Category Carousel -->
+<section class="py-4 bg-white border-bottom">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+                <h4 class="font-weight-extrabold text-dark mb-0">What's on your mind?</h4>
+                <p class="text-muted small mb-0">Explore handpicked Bengaluru favorites</p>
+            </div>
+            {% if selected_cuisine or selected_area or veg_only or query or min_rating or price_range %}
+                <a href="{% url 'main:home' %}" class="small font-weight-bold text-danger">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> Reset All Filters
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="food-category-carousel">
+            {% for cat in food_categories %}
+                <a href="{% url 'main:home' %}?q={{ cat.query|urlencode }}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+                   class="category-card-item" id="catItem{{ forloop.counter }}">
+                    <div class="category-img-circle">
+                        <img src="{{ cat.img }}" 
+                             onerror="this.src='{% static 'images/fallback_food.svg' %}'" 
+                             alt="{{ cat.name }}">
+                    </div>
+                    <span class="category-title-text">{{ cat.name }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Cuisines Carousel Strip -->
+<section class="cuisine-strip">
+    <div class="container">
+        <div class="cuisine-scroll-container">
+            <a href="{% url 'main:home' %}" class="cuisine-chip {% if not selected_cuisine %}active{% endif %}">
+                <span>🍽️ All Cuisines</span>
+            </a>
+            <a href="{% url 'main:home' %}?cuisine=South+Indian{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="cuisine-chip {% if selected_cuisine == 'South Indian' %}active{% endif %}">
+                <span>🥟 South Indian</span>
+            </a>
+            <a href="{% url 'main:home' %}?cuisine=Biryani{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="cuisine-chip {% if selected_cuisine == 'Biryani' %}active{% endif %}">
+                <span>🍗 Biryani</span>
+            </a>
+            <a href="{% url 'main:home' %}?cuisine=North+Indian{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="cuisine-chip {% if selected_cuisine == 'North Indian' %}active{% endif %}">
+                <span>🥘 North Indian</span>
+            </a>
+            <a href="{% url 'main:home' %}?cuisine=Chinese{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="cuisine-chip {% if selected_cuisine == 'Chinese' %}active{% endif %}">
+                <span>🍜 Chinese</span>
+            </a>
+            <a href="{% url 'main:home' %}?cuisine=Cafe{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="cuisine-chip {% if selected_cuisine == 'Cafe' %}active{% endif %}">
+                <span>☕ Cafe & Beverages</span>
+            </a>
+            <a href="{% url 'main:home' %}?cuisine=Desserts{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="cuisine-chip {% if selected_cuisine == 'Desserts' %}active{% endif %}">
+                <span>🍰 Desserts & Bakery</span>
+            </a>
+            <a href="{% url 'main:home' %}?cuisine=Fast+Food{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="cuisine-chip {% if selected_cuisine == 'Fast Food' %}active{% endif %}">
+                <span>🍔 Fast Food</span>
+            </a>
+            <a href="{% url 'main:home' %}?cuisine=Street+Food{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="cuisine-chip {% if selected_cuisine == 'Street Food' %}active{% endif %}">
+                <span>🍢 Street Food</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Trending Dishes Section -->
+{% if top_dishes %}
+<section class="py-4 bg-white border-bottom">
+    <div class="container">
+        <h5 class="font-weight-bold mb-3"><i class="fa-solid fa-fire text-danger mr-1"></i> Popular Bengaluru Dishes</h5>
+        <div class="row">
+            {% for dish in top_dishes %}
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+                    <div class="card h-100 border-0 shadow-sm rounded-lg overflow-hidden">
+                        <div style="height: 140px; position: relative; background: #f1f5f9;">
+                            <img src="{{ dish.get_display_image }}" 
+                                 onerror="this.onerror=null; this.src='{% static 'images/fallback_food.svg' %}';"
+                                 alt="{{ dish.title }}" 
+                                 style="width: 100%; height: 100%; object-fit: cover;">
+                            <span class="badge badge-dark position-absolute" style="bottom: 8px; left: 8px; font-size: 0.75rem;">
+                                ₹{{ dish.price|floatformat:0 }}
+                            </span>
+                            {% if dish.is_veg %}
+                                <span class="badge badge-success position-absolute" style="top: 8px; left: 8px; font-size: 0.7rem;">
+                                    ● Pure Veg
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="card-body p-3 d-flex flex-column justify-content-between">
+                            <div>
+                                <h6 class="font-weight-bold mb-1 text-truncate">
+                                    <a href="{% url 'main:dishes' dish.slug %}" class="text-dark">{{ dish.title }}</a>
+                                </h6>
+                                <p class="small text-muted mb-2 text-truncate">
+                                    {% if dish.restaurant %}{{ dish.restaurant.name }}{% else %}FoodieGo Kitchen{% endif %}
+                                </p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge badge-light text-success font-weight-bold">
+                                    <i class="fa-solid fa-star text-warning"></i> {{ dish.rating|floatformat:1 }}
+                                </span>
+                                <a href="{% url 'main:add-to-cart' dish.slug %}?next={{ request.get_full_path|urlencode }}" 
+                                   class="btn btn-sm btn-outline-success font-weight-bold px-3"
+                                   id="addDish{{ dish.id }}">
+                                    + ADD
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Main Restaurants Listing Section -->
+<section class="container mt-4">
+    <!-- Controls & Filters Bar -->
+    <div class="controls-bar">
+        <div class="filter-group flex-wrap">
+            <span class="font-weight-bold text-dark mr-2">
+                {{ total_restaurants }} Restaurants delivering in Bengaluru
+            </span>
+
+            <!-- Pure Veg Filter -->
+            <a href="{% url 'main:home' %}?{% if veg_only %}{% else %}veg=true{% endif %}{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if min_rating %}&rating={{ min_rating }}{% endif %}{% if price_range %}&price={{ price_range }}{% endif %}" 
+               class="filter-btn veg-toggle {% if veg_only %}active{% endif %}" id="filterVegBtn">
+                <i class="fa-solid fa-leaf mr-1"></i> Pure Veg
+            </a>
+
+            <!-- Fast Delivery Filter -->
+            <a href="{% url 'main:home' %}?sort=delivery_time{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="filter-btn {% if sort_by == 'delivery_time' %}active{% endif %}" id="filterFastDeliveryBtn">
+                <i class="fa-solid fa-bolt text-warning mr-1"></i> Fast Delivery
+            </a>
+
+            <!-- Rating 4.0+ Filter -->
+            <a href="{% url 'main:home' %}?rating=4.0{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}" 
+               class="filter-btn {% if min_rating == '4.0' %}active{% endif %}" id="filterRating4Btn">
+                <i class="fa-solid fa-star text-warning mr-1"></i> Ratings 4.0+
+            </a>
+
+            <!-- Price Range Filters Dropdown -->
+            <div class="dropdown d-inline-block">
+                <button class="filter-btn dropdown-toggle {% if price_range %}active{% endif %}" type="button" id="priceDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa-solid fa-wallet mr-1"></i>
+                    {% if price_range == 'under_300' %}Under ₹300
+                    {% elif price_range == '300_500' %}₹300 - ₹500
+                    {% elif price_range == 'above_500' %}Above ₹500
+                    {% else %}Cost for Two{% endif %}
+                </button>
+                <div class="dropdown-menu shadow border-0" aria-labelledby="priceDropdown">
+                    <a class="dropdown-item {% if not price_range %}font-weight-bold text-primary{% endif %}" href="{% url 'main:home' %}?{% if query %}q={{ query }}&{% endif %}{% if selected_cuisine %}cuisine={{ selected_cuisine }}&{% endif %}{% if selected_area %}area={{ selected_area }}&{% endif %}{% if veg_only %}veg=true&{% endif %}">All Price Ranges</a>
+                    <a class="dropdown-item {% if price_range == 'under_300' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:home' %}?price=under_300{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}">Under ₹300</a>
+                    <a class="dropdown-item {% if price_range == '300_500' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:home' %}?price=300_500{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}">₹300 - ₹500</a>
+                    <a class="dropdown-item {% if price_range == 'above_500' %}font-weight-bold text-primary{% endif %}" href="{% url 'main:home' %}?price=above_500{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if veg_only %}&veg=true{% endif %}">Above ₹500</a>
+                </div>
+            </div>
+
+            <!-- Bengaluru Areas Filter Dropdown -->
+            <div class="dropdown d-inline-block">
+                <button class="filter-btn dropdown-toggle {% if selected_area %}active{% endif %}" type="button" id="areaDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa-solid fa-location-dot mr-1"></i>
+                    {% if selected_area %}{{ selected_area }}{% else %}All Areas{% endif %}
+                </button>
+                <div class="dropdown-menu shadow border-0" aria-labelledby="areaDropdown" style="max-height: 280px; overflow-y: auto;">
+                    <a class="dropdown-item {% if not selected_area %}font-weight-bold text-primary{% endif %}" href="{% url 'main:home' %}?{% if query %}q={{ query }}&{% endif %}{% if selected_cuisine %}cuisine={{ selected_cuisine }}&{% endif %}{% if veg_only %}veg=true&{% endif %}">
+                        All Bengaluru Localities
+                    </a>
+                    {% for area in bengaluru_areas %}
+                        <a class="dropdown-item {% if selected_area == area %}font-weight-bold text-primary{% endif %}" 
+                           href="{% url 'main:home' %}?area={{ area }}{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if veg_only %}&veg=true{% endif %}">
+                            {{ area }}
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sorting Dropdown -->
+        <div class="d-flex align-items-center">
+            <span class="small text-muted mr-2 font-weight-bold">Sort By:</span>
+            <div class="dropdown">
+                <button class="filter-btn dropdown-toggle" type="button" id="sortDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {% if sort_by == 'delivery_time' %}Fastest Delivery
+                    {% elif sort_by == 'cost_asc' %}Cost: Low to High
+                    {% elif sort_by == 'cost_desc' %}Cost: High to Low
+                    {% else %}Rating: High to Low{% endif %}
+                </button>
+                <div class="dropdown-menu dropdown-menu-right shadow border-0" aria-labelledby="sortDropdown">
+                    <a class="dropdown-item" href="{% url 'main:home' %}?sort=-rating{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}">Rating: High to Low</a>
+                    <a class="dropdown-item" href="{% url 'main:home' %}?sort=delivery_time{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}">Fastest Delivery</a>
+                    <a class="dropdown-item" href="{% url 'main:home' %}?sort=cost_asc{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}">Cost: Low to High</a>
+                    <a class="dropdown-item" href="{% url 'main:home' %}?sort=cost_desc{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}">Cost: High to Low</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restaurant Cards Grid -->
+    {% if restaurants %}
+        <div class="restaurants-grid">
+            {% for rest in restaurants %}
+                <a href="{% url 'main:restaurant_detail' rest.slug %}" class="restaurant-card" id="restaurantCard{{ rest.id }}">
+                    <div class="card-image-wrap">
+                        <img src="{{ rest.get_display_image }}" 
+                             onerror="this.onerror=null; this.src='{% static 'images/fallback_restaurant.svg' %}';"
+                             alt="{{ rest.name }}"
+                             loading="lazy">
+                        <div class="badge-delivery-time">
+                            <i class="fa-solid fa-bolt text-warning mr-1"></i>{{ rest.estimated_delivery_minutes }} MINS
+                        </div>
+                        {% if rest.rating >= 4.5 %}
+                            <div class="badge-offer-ribbon">
+                                <i class="fa-solid fa-tag mr-1"></i>POPULAR
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="card-name-rating">
+                            <h3 class="restaurant-name text-truncate" title="{{ rest.name }}">{{ rest.name }}</h3>
+                            <div class="rating-badge">
+                                <i class="fa-solid fa-star"></i> {{ rest.rating|floatformat:1 }}
+                            </div>
+                        </div>
+                        <div class="cuisine-text">{{ rest.cuisine }}</div>
+                        <div class="area-price-row">
+                            <span><i class="fa-solid fa-location-pin text-muted mr-1"></i>{{ rest.area }}</span>
+                            <span class="font-weight-bold">₹{{ rest.average_cost_for_two|floatformat:0 }} for two</span>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if restaurants.has_other_pages %}
+            <nav aria-label="Page navigation" class="mb-5">
+                <ul class="pagination justify-content-center">
+                    {% if restaurants.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link text-dark font-weight-bold" href="?page={{ restaurants.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">&laquo; Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link bg-primary border-primary font-weight-bold">{{ restaurants.number }} of {{ restaurants.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if restaurants.has_next %}
+                        <li class="page-item">
+                            <a class="page-link text-dark font-weight-bold" href="?page={{ restaurants.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_cuisine %}&cuisine={{ selected_cuisine }}{% endif %}{% if selected_area %}&area={{ selected_area }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">Next &raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5 bg-white rounded-lg shadow-sm border mb-5">
+            <i class="fa-solid fa-utensils text-muted mb-3" style="font-size: 3rem;"></i>
+            <h4>No restaurants match your filters</h4>
+            <p class="text-muted">Try removing some filters or searching for another cuisine or location in Bengaluru.</p>
+            <a href="{% url 'main:home' %}" class="btn btn-primary font-weight-bold px-4 py-2 mt-2">
+                View All Bengaluru Restaurants
+            </a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

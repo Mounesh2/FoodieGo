@@ -1,0 +1,176 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block title %}Bengaluru Restaurants Directory — FoodieGo{% endblock %}
+
+{% block content %}
+<div class="py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container">
+        <!-- Breadcrumb & Title Bar -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0 mb-1 small">
+                        <li class="breadcrumb-item"><a href="{% url 'main:home' %}">Home</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Restaurants</li>
+                    </ol>
+                </nav>
+                <h3 class="font-weight-bold text-dark mb-0">
+                    Restaurants in Bengaluru
+                    {% if selected_area %}<span class="text-primary font-weight-normal">({{ selected_area }})</span>{% endif %}
+                </h3>
+            </div>
+            <div>
+                <span class="badge badge-warning px-3 py-2 font-weight-bold text-dark" style="font-size: 0.9rem;">
+                    {{ total_restaurants }} Outlets Available
+                </span>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Sidebar Filters -->
+            <div class="col-lg-3 mb-4">
+                <div class="card border-0 shadow-sm rounded-lg p-3 sticky-top" style="top: 85px; border-radius: 14px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h6 class="font-weight-bold text-dark mb-0"><i class="fa-solid fa-sliders mr-2 text-warning"></i> Filters</h6>
+                        <a href="{% url 'main:restaurants' %}" class="small text-danger font-weight-bold">Reset All</a>
+                    </div>
+
+                    <form action="{% url 'main:restaurants' %}" method="get" id="filterForm">
+                        {% if query %}
+                            <input type="hidden" name="q" value="{{ query }}">
+                        {% endif %}
+
+                        <!-- Pure Veg Toggle -->
+                        <div class="custom-control custom-switch mb-3 pb-3 border-bottom">
+                            <input type="checkbox" class="custom-control-input" id="vegSwitch" name="veg" value="true" {% if veg_only %}checked{% endif %} onchange="this.form.submit()">
+                            <label class="custom-control-label font-weight-bold text-success" for="vegSwitch">
+                                <i class="fa-solid fa-leaf mr-1"></i> Pure Veg Only
+                            </label>
+                        </div>
+
+                        <!-- Sort By -->
+                        <div class="form-group mb-3">
+                            <label class="small font-weight-bold text-muted text-uppercase mb-1">Sort By</label>
+                            <select name="sort" class="form-control form-control-sm" onchange="this.form.submit()" style="border-radius: 8px;">
+                                <option value="-rating" {% if sort_by == '-rating' %}selected{% endif %}>Highest Rated</option>
+                                <option value="delivery_time" {% if sort_by == 'delivery_time' %}selected{% endif %}>Fastest Delivery</option>
+                                <option value="cost_asc" {% if sort_by == 'cost_asc' %}selected{% endif %}>Cost: Low to High</option>
+                                <option value="cost_desc" {% if sort_by == 'cost_desc' %}selected{% endif %}>Cost: High to Low</option>
+                            </select>
+                        </div>
+
+                        <!-- Locality Filter -->
+                        <div class="form-group mb-3">
+                            <label class="small font-weight-bold text-muted text-uppercase mb-1">Bengaluru Locality</label>
+                            <select name="area" class="form-control form-control-sm" onchange="this.form.submit()" style="border-radius: 8px;">
+                                <option value="">All Bengaluru Localities</option>
+                                {% for area in bengaluru_areas %}
+                                    <option value="{{ area }}" {% if selected_area == area %}selected{% endif %}>{{ area }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Rating Filter -->
+                        <div class="form-group mb-3">
+                            <label class="small font-weight-bold text-muted text-uppercase mb-1">Minimum Rating</label>
+                            <div class="btn-group btn-group-toggle btn-group-sm d-flex" data-toggle="buttons">
+                                <a href="?sort={{ sort_by }}&area={{ selected_area }}&veg={{ veg_only }}&rating=3.5" class="btn btn-outline-secondary {% if min_rating == '3.5' %}active bg-warning text-dark border-warning{% endif %}">3.5+</a>
+                                <a href="?sort={{ sort_by }}&area={{ selected_area }}&veg={{ veg_only }}&rating=4.0" class="btn btn-outline-secondary {% if min_rating == '4.0' %}active bg-warning text-dark border-warning{% endif %}">4.0+</a>
+                                <a href="?sort={{ sort_by }}&area={{ selected_area }}&veg={{ veg_only }}&rating=4.5" class="btn btn-outline-secondary {% if min_rating == '4.5' %}active bg-warning text-dark border-warning{% endif %}">4.5+</a>
+                            </div>
+                        </div>
+
+                        <!-- Cost for Two Filter -->
+                        <div class="form-group mb-2">
+                            <label class="small font-weight-bold text-muted text-uppercase mb-1">Cost for Two</label>
+                            <div class="d-flex flex-column small">
+                                <a href="?price=under_300&area={{ selected_area }}&sort={{ sort_by }}" class="text-decoration-none py-1 {% if price_range == 'under_300' %}font-weight-bold text-primary{% else %}text-muted{% endif %}">
+                                    • Less than ₹300
+                                </a>
+                                <a href="?price=300_500&area={{ selected_area }}&sort={{ sort_by }}" class="text-decoration-none py-1 {% if price_range == '300_500' %}font-weight-bold text-primary{% else %}text-muted{% endif %}">
+                                    • ₹300 to ₹500
+                                </a>
+                                <a href="?price=above_500&area={{ selected_area }}&sort={{ sort_by }}" class="text-decoration-none py-1 {% if price_range == 'above_500' %}font-weight-bold text-primary{% else %}text-muted{% endif %}">
+                                    • Greater than ₹500
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Restaurant Cards Grid -->
+            <div class="col-lg-9">
+                {% if restaurants %}
+                    <div class="row">
+                        {% for rest in restaurants %}
+                            <div class="col-md-6 col-xl-4 mb-4">
+                                <div class="card h-100 border-0 shadow-sm rounded-lg overflow-hidden restaurant-card position-relative" style="border-radius: 14px; transition: transform 0.2s, box-shadow 0.2s;">
+                                    <div class="position-relative">
+                                        <img src="{{ rest.get_display_image }}" onerror="this.onerror=null; this.src='{% static 'images/fallback_restaurant.svg' %}';" alt="{{ rest.name }}" class="card-img-top" style="height: 170px; object-fit: cover;">
+                                        <div class="position-absolute" style="bottom: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between;">
+                                            <span class="badge badge-dark px-2 py-1 font-weight-bold" style="background: rgba(0,0,0,0.75);">
+                                                <i class="fa-solid fa-clock mr-1 text-warning"></i> {{ rest.estimated_delivery_minutes }} mins
+                                            </span>
+                                            {% if not rest.is_open %}
+                                                <span class="badge badge-danger px-2 py-1 font-weight-bold">Closed Now</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-3 d-flex flex-column">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <h6 class="font-weight-bold text-dark mb-0 text-truncate" title="{{ rest.name }}">{{ rest.name }}</h6>
+                                            <span class="badge badge-success px-2 py-1 font-weight-bold">
+                                                <i class="fa-solid fa-star small mr-1"></i>{{ rest.rating }}
+                                            </span>
+                                        </div>
+                                        <p class="small text-muted mb-2 text-truncate">{{ rest.cuisine }}</p>
+                                        <div class="d-flex justify-content-between small text-muted pt-2 border-top mt-auto">
+                                            <span><i class="fa-solid fa-location-dot mr-1 text-danger"></i>{{ rest.area }}</span>
+                                            <span class="font-weight-bold">₹{{ rest.average_cost_for_two|floatformat:0 }} for two</span>
+                                        </div>
+                                        <a href="{% url 'main:restaurant_detail' rest.slug %}" class="btn btn-sm btn-outline-warning btn-block mt-3 font-weight-bold text-dark" style="border-radius: 8px;">
+                                            Explore Menu &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if restaurants.has_other_pages %}
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if restaurants.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ restaurants.previous_page_number }}&area={{ selected_area }}&cuisine={{ selected_cuisine }}&veg={{ veg_only }}&rating={{ min_rating }}&price={{ price_range }}&sort={{ sort_by }}">&laquo; Previous</a>
+                                    </li>
+                                {% endif %}
+                                <li class="page-item disabled">
+                                    <span class="page-link text-dark font-weight-bold">Page {{ restaurants.number }} of {{ restaurants.paginator.num_pages }}</span>
+                                </li>
+                                {% if restaurants.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ restaurants.next_page_number }}&area={{ selected_area }}&cuisine={{ selected_cuisine }}&veg={{ veg_only }}&rating={{ min_rating }}&price={{ price_range }}&sort={{ sort_by }}">Next &raquo;</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5 bg-white rounded-lg shadow-sm p-4">
+                        <div class="display-4 text-warning mb-3">🍽️</div>
+                        <h4 class="font-weight-bold text-dark">No restaurants match these filters</h4>
+                        <p class="text-muted">Try resetting your area or rating filters to see more dining options in Bengaluru.</p>
+                        <a href="{% url 'main:restaurants' %}" class="btn btn-warning px-4 py-2 font-weight-bold text-dark" style="border-radius: 8px;">
+                            Clear All Filters
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

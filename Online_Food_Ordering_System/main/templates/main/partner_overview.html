@@ -1,0 +1,197 @@
+{% extends 'main/layout.html' %}
+{% load static %}
+
+{% block title %}{{ restaurant.name }} Kitchen Overview — FoodieGo Partner{% endblock %}
+
+{% block content %}
+<div class="partner-portal-wrapper py-4" style="background: #f8f9fa; min-height: 85vh;">
+    <div class="container">
+        <!-- Partner Header & Sub-Nav Bar -->
+        <div class="card border-0 shadow-sm rounded-lg p-3 p-md-4 mb-4 bg-white" style="border-radius: 16px;">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <img src="{{ restaurant.get_display_image }}" onerror="this.onerror=null; this.src='{% static 'images/fallback_restaurant.svg' %}';" alt="{{ restaurant.name }}" class="rounded-circle mr-3 shadow-sm" style="width: 65px; height: 65px; object-fit: cover;">
+                    <div>
+                        <div class="d-flex align-items-center">
+                            <h4 class="font-weight-bold text-dark mb-0">{{ restaurant.name }}</h4>
+                            <span class="badge {% if restaurant.is_open %}badge-success{% else %}badge-danger{% endif %} ml-2 px-2 py-1">
+                                {% if restaurant.is_open %}OPEN FOR ORDERS{% else %}CURRENTLY CLOSED{% endif %}
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-0">
+                            {{ restaurant.area }} • {{ restaurant.cuisine }} • Operating: {{ restaurant.opening_time }} - {{ restaurant.closing_time }}
+                        </p>
+                    </div>
+                </div>
+                <div class="mt-3 mt-md-0 d-flex flex-wrap">
+                    <a href="{% url 'main:restaurant_portal_orders' %}" class="btn btn-warning font-weight-bold text-dark px-3 py-2 mr-2 mb-1" style="border-radius: 8px;">
+                        <i class="fa-solid fa-bell mr-1"></i> Kitchen Orders
+                    </a>
+                    <a href="{% url 'main:restaurant_portal_menu' %}" class="btn btn-outline-secondary font-weight-bold px-3 py-2 mr-2 mb-1" style="border-radius: 8px;">
+                        <i class="fa-solid fa-book-open mr-1"></i> Menu Items
+                    </a>
+                    <a href="{% url 'main:restaurant_portal_settings' %}" class="btn btn-outline-secondary font-weight-bold px-3 py-2 mb-1" style="border-radius: 8px;">
+                        <i class="fa-solid fa-gear mr-1"></i> Outlet Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm rounded-lg p-3 bg-white h-100" style="border-radius: 14px; border-left: 5px solid #fc8019 !important;">
+                    <div class="small font-weight-bold text-muted text-uppercase">Today's Orders</div>
+                    <div class="h3 font-weight-bold text-dark mb-1 mt-1">{{ today_count }}</div>
+                    <div class="small text-muted">Orders received today</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm rounded-lg p-3 bg-white h-100" style="border-radius: 14px; border-left: 5px solid #10b981 !important;">
+                    <div class="small font-weight-bold text-muted text-uppercase">Today's Sales</div>
+                    <div class="h3 font-weight-bold text-success mb-1 mt-1">₹{{ today_sales|floatformat:2 }}</div>
+                    <div class="small text-muted">Excludes cancellations</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm rounded-lg p-3 bg-white h-100" style="border-radius: 14px; border-left: 5px solid #f59e0b !important;">
+                    <div class="small font-weight-bold text-muted text-uppercase">Active In Kitchen</div>
+                    <div class="h3 font-weight-bold text-warning mb-1 mt-1">{{ pending_count }}</div>
+                    <div class="small text-muted">Pending / Cooking / Ready</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="card border-0 shadow-sm rounded-lg p-3 bg-white h-100" style="border-radius: 14px; border-left: 5px solid #3b82f6 !important;">
+                    <div class="small font-weight-bold text-muted text-uppercase">Completed Deliveries</div>
+                    <div class="h3 font-weight-bold text-primary mb-1 mt-1">{{ completed_count }}</div>
+                    <div class="small text-muted">All-time delivered</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Active Pending Kitchen Orders -->
+            <div class="col-lg-8 mb-4">
+                <div class="card border-0 shadow-sm rounded-lg p-4 bg-white" style="border-radius: 16px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h5 class="font-weight-bold text-dark mb-0">
+                            <i class="fa-solid fa-fire-burner text-danger mr-2"></i> Live Kitchen Queue ({{ pending_orders|length }})
+                        </h5>
+                        <a href="{% url 'main:restaurant_portal_orders' %}" class="small font-weight-bold text-primary">View All Orders &rarr;</a>
+                    </div>
+
+                    {% if pending_orders %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="bg-light small text-muted text-uppercase">
+                                    <tr>
+                                        <th>Order #</th>
+                                        <th>Items & Customer</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ord in pending_orders %}
+                                        <tr>
+                                            <td class="font-monospace font-weight-bold text-dark">
+                                                #{{ ord.order_number }}
+                                                <div class="small text-muted font-weight-normal">{{ ord.created_at|date:"h:i A" }}</div>
+                                            </td>
+                                            <td>
+                                                <div class="font-weight-bold text-dark">
+                                                    {% for oi in ord.order_items.all|slice:":2" %}
+                                                        {{ oi.quantity }}x {{ oi.item_title }}{% if not forloop.last %}, {% endif %}
+                                                    {% empty %}
+                                                        {% for ci in ord.cart_items.all|slice:":2" %}
+                                                            {{ ci.quantity }}x {{ ci.item.title }}{% if not forloop.last %}, {% endif %}
+                                                        {% endfor %}
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="small text-muted">Customer: {{ ord.user.username }} (₹{{ ord.total_amount|floatformat:0 }})</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-warning text-dark px-2 py-1 font-weight-bold">
+                                                    {{ ord.status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if ord.status == 'Confirmed' or ord.status == 'Active' %}
+                                                    <form action="{% url 'main:restaurant_update_order_status' ord.order_number %}" method="post" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="accept">
+                                                        <input type="hidden" name="next" value="{% url 'main:restaurant_portal_overview' %}">
+                                                        <button type="submit" class="btn btn-sm btn-success font-weight-bold px-2 py-1">
+                                                            Accept
+                                                        </button>
+                                                    </form>
+                                                {% elif ord.status == 'Accepted' %}
+                                                    <form action="{% url 'main:restaurant_update_order_status' ord.order_number %}" method="post" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="preparing">
+                                                        <input type="hidden" name="next" value="{% url 'main:restaurant_portal_overview' %}">
+                                                        <button type="submit" class="btn btn-sm btn-info font-weight-bold px-2 py-1">
+                                                            Cook
+                                                        </button>
+                                                    </form>
+                                                {% elif ord.status == 'Preparing' %}
+                                                    <form action="{% url 'main:restaurant_update_order_status' ord.order_number %}" method="post" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="ready">
+                                                        <input type="hidden" name="next" value="{% url 'main:restaurant_portal_overview' %}">
+                                                        <button type="submit" class="btn btn-sm btn-warning font-weight-bold px-2 py-1 text-dark">
+                                                            Ready
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <span class="small text-muted">Awaiting Rider</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-bell-slash text-slate-300 mb-2" style="font-size: 2rem;"></i>
+                            <p class="mb-0 font-weight-bold">Kitchen Queue is Empty</p>
+                            <small>New orders from Bengaluru customers will appear here automatically.</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Popular Dishes & Quick Stats -->
+            <div class="col-lg-4 mb-4">
+                <div class="card border-0 shadow-sm rounded-lg p-4 bg-white" style="border-radius: 16px;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h6 class="font-weight-bold text-dark mb-0">
+                            <i class="fa-solid fa-star text-warning mr-1"></i> Popular Menu Dishes
+                        </h6>
+                        <a href="{% url 'main:restaurant_portal_menu' %}" class="small font-weight-bold text-primary">Manage</a>
+                    </div>
+                    {% for dish in popular_dishes %}
+                        <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <div class="d-flex align-items-center pr-2">
+                                <img src="{{ dish.get_display_image }}" onerror="this.onerror=null; this.src='{% static 'images/fallback_food.svg' %}';" alt="{{ dish.title }}" class="rounded mr-2" style="width: 42px; height: 42px; object-fit: cover;">
+                                <div>
+                                    <div class="small font-weight-bold text-dark text-truncate" style="max-width: 140px;" title="{{ dish.title }}">{{ dish.title }}</div>
+                                    <span class="small text-muted">₹{{ dish.price|floatformat:0 }}</span>
+                                </div>
+                            </div>
+                            <div>
+                                {% if dish.is_available %}
+                                    <span class="badge badge-light text-success border border-success small">In Stock</span>
+                                {% else %}
+                                    <span class="badge badge-light text-danger border border-danger small">Sold Out</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
